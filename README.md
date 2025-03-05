@@ -59,5 +59,10 @@ Processed Lyrics:
 ## Important Notes  
 Input format should match the tool's processing logic for optimal results.  
 
+## Acknowledgements  
+- Thanks to [**DeepSeek**](https://www.deepseek.com/) for their strong support - core implementation of this project was built by DeepSeek  
+- Thanks to [**FanSh**](https://github.com/fred913/) for revising unreasonable implementations and optimizing logging features  
+- Thanks to [**HKLHaoBin**](https://github.com/HKLHaoBin) for deploying this project on GitHub, enabling its usage in GitHub Issues ([Visit TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys))
+
 ## License  
 This project uses the MIT License.
