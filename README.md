@@ -56,7 +56,6 @@ For example, the pending content is`test.ttml`:
 
 The script will produce the following results and output the file`test.lys`to the`output`folder: 
 ```
-Processed Lyrics:
 [4]English (3694,384)version (4078,332)one(4410,389)
 ```
 
