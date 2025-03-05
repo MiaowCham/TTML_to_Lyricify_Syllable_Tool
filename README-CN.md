@@ -41,7 +41,7 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
    - 将修正后的结果以评论形式提交到相应的 Issue 中。
 
 ## 示例
-假设 Issue 内容为：
+假设待处理内容为：
 ```
 <span begin="00:03.694" end="00:04.078">English </span><span begin="00:04.078" end="00:04.410">version </span><span begin="00:04.410" end="00:04.799">one</span>
 <span begin="00:03.694" end="00:04.078">English</span> <span begin="00:04.078" end="00:04.410">version</span> <span begin="00:04.410" end="00:04.799">one</span>
@@ -55,6 +55,11 @@ Processed Lyrics:
 
 ## 注意事项
  输入文本格式应与工具的处理逻辑相匹配，以确保修正效果最佳。
+
+## 特别感谢
+- 感谢 [**DeepSeek**](https://www.deepseek.com/) 为此项目提供的大力支持，此项目主要代码由 DeepSeek 构建
+- 感谢 [**FanSh**](https://github.com/fred913/) 修改了部分不合理的内容并优化了log功能
+- 感谢 [**浩彬**](https://github.com/HKLHaoBin) 将此项目部署到 Github，使此项目得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
 
 ## 许可证
 此项目使用 MIT 许可证。
