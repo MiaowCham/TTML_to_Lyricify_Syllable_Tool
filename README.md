@@ -2,7 +2,7 @@
 **一个适用于 AMLL TTML 文件转 Lyricify Syllable 的小工具**
 
 开发者是[**喵锵**](https://github.com/MiaowCham)，初始版本由 DeepSeek 构建。<br>
-[**浩彬**](https://github.com/HKLHaoBin)将工具进行了修改，得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys/)）
+[**浩彬**](https://github.com/HKLHaoBin)将工具进行了修改，得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
 
 TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。并且使用 AMLL TTML Tool 输出的 Lys 格式及其不规范，TTML to Lyricify Syllable Tool 就是为了解决这个问题而诞生的。
 
@@ -19,7 +19,7 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
 ## TTML to Lys on Github
 **TTML to Lys on Github** 主要用于实现从 GitHub Issue 中获取歌词内容，将 ttml 格式歌词转换为 lys，然后将处理后的结果以评论的形式附加到该 Issue 中。该工具通过 Python 实现，依赖于 GitHub API 和正则表达式技术，能够高效、智能地完成歌词内容的清理工作。
 
-### > [点击这里使用 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys/issues) <
+### > [点击这里使用 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys/issues/new/choose) <
 
 ### 使用方法
 1. 新建 **issue**，选择 **TTML歌词转Lys**
