@@ -60,9 +60,17 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
  输入文本格式应与工具的处理逻辑相匹配，以确保修正效果最佳。
 
 ## 鸣谢
-- 感谢 [**DeepSeek**](https://www.deepseek.com/) 为此项目提供的大力支持，本项目的核心实现由 DeepSeek 完成
 - 感谢 [**FanSh**](https://github.com/fred913/) 修改了部分不合理的内容并优化了log功能
 - 感谢 [**浩彬**](https://github.com/HKLHaoBin) 将此项目部署到 Github，使此项目得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
+
+### 特别鸣谢
+
+<div align="center">
+<img src="image/../images/logo.webp" width="200"/>
+
+   感谢 [**DeepSeek**](https://www.deepseek.com/) 为此项目提供的大力支持<br>本项目的核心实现由 DeepSeek 完成
+
+</div>
 
 ## 许可证
 此项目使用 MIT 许可证。
