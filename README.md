@@ -29,7 +29,7 @@ Now simply drag-and-drop to complete standardized conversion! Even supports tran
 
 ### How to Use  
 1. Create new **issue** and select **TTML Lyrics to Lys** template  
-2. Paste TTML lyrics into **描述** field  
+2. Paste TTML lyrics into **description**
 3. Submit **issue** and wait for conversion  
 
 **Converted results will be posted as comments on the corresponding Issue.**  
