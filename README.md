@@ -1,0 +1,63 @@
+# TTML to Lyricify Syllable Tool
+
+English / [简体中文](./README-CN.md)
+
+> [!WARNING]
+> English readme is temporarily translated by DeepSeek
+
+**A lightweight tool for converting AMLL TTML files to Lyricify Syllable format**  
+
+Developer: [**MiaowCham**](https://github.com/MiaowCham), initial version built by DeepSeek.  
+[**HKLHaoBin**](https://github.com/HKLHaoBin) modified the tool for GitHub Issue usage ([Visit TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys))  
+
+TTML is the lyric format used by AMLL, but unfortunately they are incompatible. The Lys format output by AMLL TTML Tool is highly non-standard, which is why TTML to Lyricify Syllable Tool was created.  
+
+Now simply drag-and-drop to complete standardized conversion! Even supports translation extraction and separate output.  
+
+### Usage Instructions  
+   - Drag-and-drop TTML files directly onto the tool icon or command line window  
+   - Default output directory: `output` folder (customizable path)  
+   - Requires Python 3.x+ environment (tested on 3.11 & 3.12)  
+   - Enable logging by adding "log_on:True" in `log\log.set`  
+
+### Detailed information: [Prompts & Conversion Principles](/Prompt_words_&_Conversion_principles.md)  
+
+## TTML to Lys on Github  
+**TTML to Lys on Github** enables TTML-to-Lys conversion through GitHub Issues. This Python-based tool leverages GitHub API and regex to efficiently process lyrics.  
+
+### > [Click to Use TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys/issues/new/choose) <  
+
+### How to Use  
+1. Create new **issue** and select **TTML Lyrics to Lys** template  
+2. Paste TTML lyrics into **描述** field  
+3. Submit **issue** and wait for conversion  
+
+**Converted results will be posted as comments on the corresponding Issue.**  
+
+### Notes  
+- Rename title to filename/song name for identification  
+- Requires `ttml_to_lys` label to trigger conversion  
+
+### Features  
+ **GitHub Integration**:  
+   - Extract content from specified GitHub Issues  
+   - Post processed results as Issue comments  
+
+## Example  
+Sample Issue content:  
+```
+<span begin="00:03.694" end="00:04.078">English </span><span begin="00:04.078" end="00:04.410">version </span><span begin="00:04.410" end="00:04.799">one</span>
+<span begin="00:03.694" end="00:04.078">English</span> <span begin="00:04.078" end="00:04.410">version</span> <span begin="00:04.410" end="00:04.799">one</span>
+```
+
+Processed result (posted as comment):  
+```
+Processed Lyrics:
+[4]English (3694,384)version (4078,332)one(4410,389)
+```
+
+## Important Notes  
+Input format should match the tool's processing logic for optimal results.  
+
+## License  
+This project is licensed under the MIT License.
