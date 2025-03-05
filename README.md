@@ -60,4 +60,4 @@ Processed Lyrics:
 Input format should match the tool's processing logic for optimal results.  
 
 ## License  
-This project is licensed under the MIT License.
+This project uses the MIT License.
