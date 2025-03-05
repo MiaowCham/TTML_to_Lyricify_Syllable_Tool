@@ -54,7 +54,7 @@ Sample Issue content:
 <span begin="00:03.694" end="00:04.078">English</span> <span begin="00:04.078" end="00:04.410">version</span> <span begin="00:04.410" end="00:04.799">one</span>
 ```
 
-The script will produce the following results and output the file test.lys to the output folder: 
+The script will produce the following results and output the file`test.lys`to the`output`folder: 
 ```
 Processed Lyrics:
 [4]English (3694,384)version (4078,332)one(4410,389)
