@@ -45,13 +45,13 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
    - 将修正后的结果以评论形式提交到相应的 Issue 中。
 
 ## 示例
-假设待处理内容为 test.ttml：
+假设待处理内容为`test.ttml`：
 ```
 <span begin="00:03.694" end="00:04.078">English </span><span begin="00:04.078" end="00:04.410">version </span><span begin="00:04.410" end="00:04.799">one</span>
 <span begin="00:03.694" end="00:04.078">English</span> <span begin="00:04.078" end="00:04.410">version</span> <span begin="00:04.410" end="00:04.799">one</span>
 ```
 
-脚本处理后会生成以下结果并输出文件 test.lys 到 output 文件夹：
+脚本处理后会生成以下结果并输出文件`test.lys`到`output`文件夹：
 ```
 [4]English (3694,384)version (4078,332)one(4410,389)
 ```
