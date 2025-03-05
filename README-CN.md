@@ -1,6 +1,10 @@
 # TTML to Lyricify Syllable Tool
 
-[English](./README.md) / 简体中文
+<div align=center>
+   
+###### [English](./README.md) / 简体中文
+
+</div>
 
 **一个适用于 AMLL TTML 文件转 Lyricify Syllable 的小工具**
 
