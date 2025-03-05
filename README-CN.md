@@ -66,9 +66,9 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
 ### 特别鸣谢
 
 <div align="center">
-<img src="image/../images/logo.webp" width="200"/>
+<img src="image/../image/logo.webp" width="300"/>
 
-   感谢 [**DeepSeek**](https://www.deepseek.com/) 为此项目提供的大力支持<br>本项目的核心实现由 DeepSeek 完成
+   感谢 [**DeepSeek**](https://www.deepseek.com/) 为此项目提供的大力支持<br>本项目的核心实现由 [**DeepSeek**](https://www.deepseek.com/) 生成
 
 </div>
 
