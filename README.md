@@ -1,6 +1,10 @@
 # TTML to Lyricify Syllable Tool
 
-English / [简体中文](./README-CN.md)
+<div align=center>
+   
+###### English / [简体中文](./README-CN.md)
+
+</div>
 
 > [!WARNING]
 > English readme is temporarily translated by DeepSeek
