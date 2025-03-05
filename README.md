@@ -48,7 +48,7 @@ Now simply drag-and-drop to complete standardized conversion! Even supports tran
    - Post processed results as Issue comments  
 
 ## Example  
-Sample Issue content:  
+For example, the pending content is`test.ttml`:  
 ```
 <span begin="00:03.694" end="00:04.078">English </span><span begin="00:04.078" end="00:04.410">version </span><span begin="00:04.410" end="00:04.799">one</span>
 <span begin="00:03.694" end="00:04.078">English</span> <span begin="00:04.078" end="00:04.410">version</span> <span begin="00:04.410" end="00:04.799">one</span>
