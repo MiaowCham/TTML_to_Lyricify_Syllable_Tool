@@ -23,7 +23,7 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
 
 ### 详细信息请见 [提示词及转换原理](/Prompt_words_&_Conversion_principles.md)
 
-## TTML to Lys on Github
+## [TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)
 **TTML to Lys on Github** 主要用于实现从 GitHub Issue 中获取歌词内容，将 ttml 格式歌词转换为 lys，然后将处理后的结果以评论的形式附加到该 Issue 中。该工具通过 Python 实现，依赖于 GitHub API 和正则表达式技术，能够高效、智能地完成歌词内容的清理工作。
 
 ### > [点击这里使用 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys/issues/new/choose) <
