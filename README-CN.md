@@ -28,16 +28,19 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
 
 ### > [点击这里使用 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys/issues/new/choose) <
 
-### 使用方法
-1. 新建 **issue**，选择 **TTML歌词转Lys**
-3. 将需要转换的 **ttml** 格式的歌词复制到 **Description 描述** 中
+### **使用方法：**
+1. 新建`issue 议题`，选择`TTML歌词转Lys`模板
+3. 将需要转换的 **ttml** 格式的歌词复制到`Description 描述`中
 4. 发送 **issue** 并等待脚本转换
-
-**修正后的结果会以评论形式提交到相应的 Issue 中。**
-
-### 注意事项
+**转换完成后 Github-actions 会将结果回复在该 issue 下**
+###### 没了，就这么简单（乐
+### **注意事项：**
 - 尽量将标题改为文件名或歌曲名，以便区分
-- Label 需要是`ttml_to_lys`才会触发转换
+- issue 的`Label 标签`必需是`ttml_to_lys`才会触发转换
+---
+**已知问题：**
+没有翻译的歌词好像会回复两遍，暂不清楚具体原因。
+###### ~~反正不影响使用就不修了~~
 
 ### 功能特点
  **GitHub 集成**：
