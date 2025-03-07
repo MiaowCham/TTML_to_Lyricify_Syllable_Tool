@@ -32,15 +32,14 @@ Now simply drag-and-drop to complete standardized conversion! Even supports tran
 ### > [Click to Use TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys/issues/new/choose) <  
 
 ### How to Use  
-1. Create new **issue** and select **TTML Lyrics to Lys** template  
-2. Paste TTML lyrics into **description**
+1. Create new`issue`and select`TTML Lyrics to Lys`template  
+2. Paste TTML lyrics into`description`
 3. Submit **issue** and wait for conversion  
-
 **Converted results will be posted as comments on the corresponding Issue.**  
 
 ### Notes  
 - Rename title to filename/song name for identification  
-- Requires `ttml_to_lys` label to trigger conversion  
+- The issue requires `ttml_to_lys` label to trigger conversion  
 
 ### Features  
  **GitHub Integration**:  
