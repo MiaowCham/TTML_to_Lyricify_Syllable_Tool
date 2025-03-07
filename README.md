@@ -12,7 +12,7 @@
 **A lightweight tool for converting AMLL TTML files to Lyricify Syllable format**  
 
 Developer: [**MiaowCham**](https://github.com/MiaowCham), initial version built by DeepSeek.  
-[**HKLHaoBin**](https://github.com/HKLHaoBin) modified the tool for GitHub Issue usage ([Visit TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)  
+[**HKLHaoBin**](https://github.com/HKLHaoBin) modified the tool for GitHub Issue usage ([Visit TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys))  
 
 TTML is the lyric format used by AMLL, but unfortunately they are incompatible. The Lys format output by AMLL TTML Tool is highly non-standard, which is why TTML to Lyricify Syllable Tool was created.  
 
