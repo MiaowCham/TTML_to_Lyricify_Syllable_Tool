@@ -64,6 +64,7 @@ Input format should match the tool's processing logic for optimal results.
 ## Acknowledgements  
 - Thanks to [**FanSh**](https://github.com/fred913/) for revising unreasonable implementations and optimizing logging features  
 - Thanks to [**HKLHaoBin**](https://github.com/HKLHaoBin) for deploying this project on GitHub, enabling its usage in GitHub Issues ([Visit TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys))
+- Thanks to [**ranhengzhang**](https://github.com/ranhengzhang) for fixed background lyrics processing logic
 
 ### Special Acknowledgements
 
