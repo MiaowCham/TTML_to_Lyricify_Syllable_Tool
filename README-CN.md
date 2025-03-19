@@ -66,8 +66,7 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
 ### 特别鸣谢
 
 <div align="center">
-   
-[![DeepSeek](https://raw.githubusercontent.com/MiaowCham/Repository_for_MiaowCham/refs/heads/main/images/DeepSeek.webp)](https://www.deepseek.com/)
+<img src="https://github.com/deepseek-ai/DeepSeek-V2/blob/main/figures/logo.svg?raw=true" width="60%" alt="DeepSeek" />
 
    感谢 [**DeepSeek**](https://www.deepseek.com/) 为此项目提供的大力支持<br>本项目的核心实现由 [**DeepSeek**](https://www.deepseek.com/) 生成
 
