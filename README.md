@@ -69,8 +69,7 @@ Input format should match the tool's processing logic for optimal results.
 ### Special Acknowledgements
 
 <div align="center">
-
-[![DeepSeek](https://raw.githubusercontent.com/MiaowCham/Repository_for_MiaowCham/refs/heads/main/images/DeepSeek.webp)](https://www.deepseek.com/)
+<img src="https://github.com/deepseek-ai/DeepSeek-V2/blob/main/figures/logo.svg?raw=true" width="60%" alt="DeepSeek" />
 
 Thanks to [**DeepSeek**](https://www.deepseek.com/) for their strong support<br>Core implementation of this project was built by [**DeepSeek**](https://www.deepseek.com/)
 
