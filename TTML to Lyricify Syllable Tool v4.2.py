@@ -247,22 +247,19 @@ def ttml_to_lys(input_path):
                 # 分离主歌词和背景人声
                 main_spans = []
                 bg_spans = []
-                current_bg = False
 
-                for elem in p:
-                    if elem.tag == f'{{{namespaces["tt"]}}}span':
-                        role = elem.get(f'{{{namespaces["ttm"]}}}role')
-                        if role == 'x-bg':
-                            bg_spans.extend(
-                                elem.findall('.//tt:span', namespaces))
-                            current_bg = True
+                def analyse_line(line: ET.Element, is_bg: bool):
+                    for word in line:
+                        word_role = word.get(f'{{{namespaces["ttm"]}}}role')
+                        if word_role == 'x-bg': # 处理bg行
+                            analyse_line(word, True)
                         else:
-                            if current_bg:
-                                bg_spans.append(elem)
+                            if is_bg:
+                                bg_spans.append(word)
                             else:
-                                main_spans.append(elem)
-                    else:
-                        current_bg = False
+                                main_spans.append(word)
+
+                analyse_line(p, False)
 
                 # 处理主歌词行
                 if main_spans:
@@ -300,6 +297,7 @@ def ttml_to_lys(input_path):
     try:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lys_lines))
+            f.flush()
         logger.info(f"成功生成LYS文件: {output_path}")
     except Exception as e:
         logger.exception(f"写入LYS文件失败")
@@ -312,6 +310,7 @@ def ttml_to_lys(input_path):
             with open(lrc_path, 'w', encoding='utf-8') as f:
                 for time_str, text in lrc_entries:
                     f.write(f"[{time_str}]{text}\n")
+                    f.flush()
             logger.info(f"成功生成翻译文件: {lrc_path}")
             lrc_generated = True
         except Exception as e:
