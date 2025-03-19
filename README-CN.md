@@ -61,6 +61,7 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
 ## 鸣谢
 - 感谢 [**FanSh**](https://github.com/fred913/) 修改了部分不合理的内容并优化了log功能
 - 感谢 [**浩彬**](https://github.com/HKLHaoBin) 将此项目部署到 Github，使此项目得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
+- 感谢 [**ranhengzhang**](https://github.com/ranhengzhang) 修复了背景歌词处理逻辑
 
 ### 特别鸣谢
 
