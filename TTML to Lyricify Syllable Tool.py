@@ -6,7 +6,7 @@ import sys
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
 
-from pip import main as pip_main
+from pip import主干as pip_main
 
 # install loguru and import
 try:
