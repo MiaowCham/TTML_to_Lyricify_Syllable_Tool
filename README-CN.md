@@ -19,7 +19,6 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
    - 直接将待转换的 ttml 文件拖入工具图标或命令行窗口即可完成转换
    - 默认输出目录为`output`文件夹,具体输出路径可自行修改
    - 本工具需要 Python 3.x 以上环境（实际仅在3.11和3.12测试）
-   - 在`log\log.set`文件中输入"log_on:True"即可开启日志输出
 
 ### 详细信息请见 [提示词及转换原理](/Prompt_words_&_Conversion_principles.md)
 
