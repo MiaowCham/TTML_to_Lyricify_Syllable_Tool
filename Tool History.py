@@ -1,6 +1,7 @@
 import sys
 import os
 import xml.etree.ElementTree as ET
+from datetime import datetime, date
 
 namespaces = {
     'tt': 'http://www.w3.org/ns/ttml',
@@ -9,138 +10,244 @@ namespaces = {
     'itunes': 'http://music.apple.com/lyric-ttml-internal'
 }
 
+def log_message(message, level='INFO'):
+    """记录日志到当天的日志文件"""
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, f"{date.today().isoformat()}.log")
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    log_line = f"[{timestamp}] [{level}] {message}\n"
+    
+    try:
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(log_line)
+    except Exception as e:
+        print(f"无法写入日志文件: {e}")
+
 def parse_time(time_str):
     """将时间字符串转换为毫秒"""
-    parts = time_str.split(':')
-    hours, minutes, rest = 0, 0, ''
-    
-    if len(parts) == 3:
-        hours, minutes, rest = parts
-    elif len(parts) == 2:
-        minutes, rest = parts
-    else:
-        rest = parts[0]
-    
-    rest_parts = rest.split('.')
-    seconds = rest_parts[0]
-    millis = rest_parts[1] if len(rest_parts) > 1 else 0
-    
-    return (int(hours) * 3600000 + 
-            int(minutes) * 60000 + 
-            int(seconds) * 1000 + 
-            int(millis.ljust(3, '0')[:3]))  # 处理不足3位的毫秒值
-
-def calculate_property(dui_chang, background):
-    """计算属性值"""
-    if background:
-        return {None:6, 'left':7, 'right':8}[dui_chang]
-    else:
-        return {None:3, 'left':4, 'right':5}[dui_chang]
-
-def process_spans(spans, dui_chang, background):
-    """处理span列表生成lys行"""
-    if not spans:
-        return None
-    
-    parts = []
-    for span in spans:
-        begin = span.get('begin')
-        end = span.get('end')
-        if not begin or not end:
-            continue
+    try:
+        parts = time_str.replace(',', '.').split(':')
+        if len(parts) == 3:  # hh:mm:ss.ms
+            h, m, rest = parts
+            s, ms = rest.split('.') if '.' in rest else (rest, 0)
+        elif len(parts) == 2:  # mm:ss.ms
+            m, rest = parts
+            h = 0
+            s, ms = rest.split('.') if '.' in rest else (rest, 0)
+        else:  # ss.ms
+            h, m = 0, 0
+            s, ms = parts[0].split('.') if '.' in parts[0] else (parts[0], 0)
         
+        return (int(h)*3600000 + int(m)*60000 + 
+                int()*1000 + int(ms.ljust(3, '0')[:3]))
+    except Exception as e:
+        log_message(f"时间解析错误: {time_str} - {str(e)}", 'ERROR')
+        return 0
+
+def format_lrc_time(millis):
+    """将毫秒转换为LRC时间格式 (mm:ss.xx)"""
+    millis = max(0, millis)
+    m = millis // 60000
+    s = (millis % 60000) // 1000
+    ms = millis % 1000
+    return f"{m:02d}:{s:02d}.{ms:03d}"
+
+def calculate_property(alignment, background):
+    """计算LYS属性值"""
+    if background:
+        return {None:6, 'left':7, 'right':8}.get(alignment, 6)
+    else:
+        return {None:3, 'left':4, 'right':5}.get(alignment, 3)
+
+def process_segment(spans, alignment, is_background):
+    """处理歌词段生成LYS行"""
+    parts = []
+    pending_space = ''  # 跟踪待处理空格
+    
+    for span in spans:
         try:
+            begin = span.get('begin')
+            end = span.get('end')
+            if not begin or not end:
+                continue
+            
             start = parse_time(begin)
             duration = parse_time(end) - start
             if duration <= 0:
                 continue
-        except:
-            continue
+            
+            # 合并前导空格和当前文本
+            raw_text = pending_space + (span.text or '')
+            text = raw_text.strip()
+            if not text:
+                # 处理纯空格span的情况
+                if raw_text:
+                    pending_space = raw_text
+                continue
+            
+            # 处理尾部内容
+            tail = span.tail or ''
+            space_segment = ''
+            non_space = ''
+            
+            # 分离空格和非空格内容
+            for i, c in enumerate(tail):
+                if c.isspace():
+                    space_segment += c
+                else:
+                    non_space = tail[i:]
+                    break
+            
+            # 空格附加到当前单词，非空格保留到pending
+            text += space_segment
+            pending_space = non_space if non_space else ''
+            
+            parts.append(f"{text}({start},{duration})")
         
-        word = (span.text or '').strip('()（）')  # 清理特殊字符
-        if not word:
-            continue
-        
-        parts.append(f'{word}({start},{duration})')
+        except Exception as e:
+            log_message(f"处理span失败: {str(e)}", 'WARNING')
+    
+    # 处理最后一个span后的未消耗内容
+    if pending_space.strip():
+        parts.append(f"{pending_space}(0,0)")
     
     if not parts:
         return None
     
-    prop = calculate_property(dui_chang, background)
-    return f'[{prop}]' + ''.join(parts)
+    prop = calculate_property(alignment, is_background)
+    return f"[{prop}]" + "".join(parts)
 
-def ttml_to_lys(input_path, output_path):
+def process_translations(p_element):
+    """处理翻译内容"""
+    translations = []
+    for elem in p_element.iter():
+        if elem.tag == f'{{{namespaces["tt"]}}}span':
+            role = elem.get(f'{{{namespaces["ttm"]}}}role')
+            if role == 'x-translation':
+                text = (elem.text or '').strip()
+                if text:
+                    translations.append(text)
+    return ' '.join(translations)
+
+def ttml_to_lys(input_path):
     """主转换函数"""
-    try:  # 新增错误处理
+    try:
         tree = ET.parse(input_path)
-    except FileNotFoundError:
-        print(f"错误：输入文件 '{input_path}' 不存在")
-        return False
-    except ET.ParseError:
-        print(f"错误：文件 '{input_path}' 不是有效的TTML文件")
-        return False
-    tree = ET.parse(input_path)
+    except Exception as e:
+        log_message(f"无法解析TTML文件: {input_path} - {str(e)}", 'ERROR')
+        return False, False
+    
     root = tree.getroot()
-    
     lys_lines = []
-    
-    # 查找所有p标签
-    body = root.find('.//tt:body', namespaces)
-    div = body.find('tt:div', namespaces) if body else None
-    p_tags = div.findall('tt:p', namespaces) if div else []
-    
-    for p in p_tags:
-        # 获取对唱方向
-        agent = p.get(f'{{{namespaces["ttm"]}}}agent')
-        dui_chang = 'left' if agent == 'v1' else 'right' if agent == 'v2' else None
-        
-        # 分离主歌词和背景人声
-        main_spans = []
-        bg_spans = []
-        
-        for child in p:
-            if child.tag == f'{{{namespaces["tt"]}}}span':
-                # 检查是否是背景人声容器
-                role = child.get(f'{{{namespaces["ttm"]}}}role')
-                if role == 'x-bg':
-                    bg_spans.extend(child.findall('.//tt:span', namespaces))
-                else:
-                    main_spans.append(child)
-        
-        # 处理主歌词行
-        if main_spans:
-            main_line = process_spans(main_spans, dui_chang, background=False)
-            if main_line:
-                lys_lines.append(main_line)
-        
-        # 处理背景人声行
-        if bg_spans:
-            bg_line = process_spans(bg_spans, dui_chang, background=True)
-            if bg_line:
-                lys_lines.append(bg_line)
-    
-    # 写入输出文件
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(lys_lines))
+    lrc_entries = []
+    has_translations = False
 
-    try:  # 新增写入错误处理
+    # 处理歌词行
+    try:
+        for p in root.findall('.//tt:p', namespaces):
+            try:
+                # 获取基础信息
+                alignment = None
+                agent = p.get(f'{{{namespaces["ttm"]}}}agent')
+                if agent == 'v1':
+                    alignment = 'left'
+                elif agent == 'v2':
+                    alignment = 'right'
+
+                # 处理翻译
+                translation = process_translations(p)
+                if translation:
+                    has_translations = True
+                
+                # 获取时间信息
+                p_begin = p.get('begin')
+                lrc_time = format_lrc_time(parse_time(p_begin))
+                lrc_entries.append((lrc_time, translation))
+
+                # 分离主歌词和背景人声
+                main_spans = []
+                bg_spans = []
+                current_bg = False
+
+                for elem in p:
+                    if elem.tag == f'{{{namespaces["tt"]}}}span':
+                        role = elem.get(f'{{{namespaces["ttm"]}}}role')
+                        if role == 'x-bg':
+                            bg_spans.extend(elem.findall('.//tt:span', namespaces))
+                            current_bg = True
+                        else:
+                            if current_bg:
+                                bg_spans.append(elem)
+                            else:
+                                main_spans.append(elem)
+                    else:
+                        current_bg = False
+
+                # 处理主歌词行
+                if main_spans:
+                    main_line = process_segment(main_spans, alignment, False)
+                    if main_line:
+                        lys_lines.append(main_line)
+
+                # 处理背景人声行
+                if bg_spans:
+                    bg_line = process_segment(bg_spans, alignment, True)
+                    if bg_line:
+                        lys_lines.append(bg_line)
+
+            except Exception as e:
+                log_message(f"处理歌词行失败: {str(e)}", 'WARNING')
+
+    except Exception as e:
+        log_message(f"解析歌词失败: {str(e)}", 'ERROR')
+        return False, False
+
+    # 写入LYS文件
+    base_name = os.path.splitext(input_path)[0]
+    output_path = f"{base_name}.lys"
+    try:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lys_lines))
-    except IOError:
-        print(f"错误：无法写入输出文件 '{output_path}'")
-        return False
-    
-    return True  # 新增返回状态
+        log_message(f"成功生成LYS文件: {output_path}")
+    except Exception as e:
+        log_message(f"写入LYS文件失败: {str(e)}", 'ERROR')
+        return False, False
+
+    # 写入LRC文件
+    lrc_generated = False
+    if has_translations:
+        lrc_path = f"{base_name}_trans.lrc"
+        try:
+            with open(lrc_path, 'w', encoding='utf-8') as f:
+                for time_str, text in lrc_entries:
+                    f.write(f"[{time_str}]{text}\n")
+            log_message(f"成功生成翻译文件: {lrc_path}")
+            lrc_generated = True
+        except Exception as e:
+            log_message(f"写入LRC文件失败: {str(e)}", 'WARNING')
+
+    return True, lrc_generated
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         input("\n请将TTML文件拖放到此程序上，然后按回车键...")
     else:
         input_path = sys.argv[1]
-        base_name = os.path.splitext(input_path)[0]
-        output_path = f"{base_name}.lys"
+        log_message(f"开始处理文件: {input_path}")
         
-        if ttml_to_lys(input_path, output_path):
-            print(f"转换成功！输出文件：{os.path.abspath(output_path)}")
-        
-    input("按回车键退出...")
+        if not os.path.exists(input_path):
+            log_message(f"文件不存在: {input_path}", 'ERROR')
+            input("文件不存在，按回车键退出...")
+            sys.exit(1)
+            
+        success, lrc_generated = ttml_to_lys(input_path)
+        if success:
+            msg = f"转换成功: {input_path}"
+            if lrc_generated:
+                msg += " (包含翻译)"
+            print(msg)
+        else:
+            print(f"转换失败: {input_path}")
+            
+        input("按回车键退出...")
