@@ -1,6 +1,7 @@
 import os
 import re
 import string
+import logging
 import sys
 import xml.etree.ElementTree as ET
 from datetime import date, datetime
@@ -24,26 +25,6 @@ namespaces = {
     'itunes': 'http://music.apple.com/lyric-ttml-internal'
 }
 
-# def logger.info(message, level='INFO'):
-#     """记录日志到当天的日志文件"""
-#     log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log')
-#     os.makedirs(log_dir, exist_ok=True)
-#     log_file = os.path.join(log_dir, f"{date.today().isoformat()}.log")
-#     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-#     log_line = f"[{timestamp}] [{level}] {message}\n"
-
-#     try:
-#         with open(log_file, 'a', encoding='utf-8') as f:
-#             f.write(log_line)
-#     except Exception as e:
-#         print(f"无法写入日志文件: {e}")
-
-# add logger to create dir and write log to specific file
-logger.add(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log',
-                        f"{datetime.now().strftime('%Y-%m-%d')}.log"),
-           level='DEBUG')
-
-
 def preprocess_ttml(content):
     """预处理TTML内容，移除xmlns=""声明"""
     # 使用正则表达式精确匹配 xmlns=""
@@ -57,8 +38,24 @@ def preprocess_ttml(content):
         # 移除所有匹配的xmlns声明
         content = pattern.sub('', content)
         logger.info(f"发现并移除了 {len(matches)} 处xmlns=\"\"声明")
+    return content, modified, matches
 
-    return content, modified
+
+def preprocess_ttml_1(content):
+    """预处理TTML内容，移除过多括号"""
+    # 匹配连续两个或以上的相同括号（( 或 )）
+    pattern = re.compile(r'([()])\1+')  # \1+ 表示重复一次或多次
+    modified = False
+
+    # 查找所有匹配项
+    matches = pattern.findall(content)
+    if matches:
+        modified = True
+        # 将连续重复的括号替换为单个
+        content = pattern.sub(r'\1', content)
+        logger.info(f"发现并移除了 {len(matches)} 处连续括号")
+    
+    return content, modified, matches
 
 
 def parse_time(time_str):
@@ -175,10 +172,17 @@ def ttml_to_lys(input_path):
         with open(input_path, 'r', encoding='utf-8') as f:
             raw_content = f.read()
 
+        revise_1 = False
+        revise_2 = False
         # 预处理移除xmlns=""声明
-        processed_content, modified = preprocess_ttml(raw_content)
+        processed_content, modified,matches = preprocess_ttml(raw_content)
         if modified:
-            logger.info(f"处理文件 {input_path} 时移除了xmlns=\"\"声明")
+            revise_1 = True
+
+        # 预处理移除多余括号
+        processed_content, modified_1,matches1 = preprocess_ttml_1(raw_content)
+        if modified_1:
+            revise_2 = True
 
         # 解析XML
         root = ET.fromstring(processed_content)
@@ -257,9 +261,19 @@ def ttml_to_lys(input_path):
         logger.exception(f"解析歌词失败")
         return False, False
 
-    # 写入LYS文件
+    # 获取当前.py文件的目录路径
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # 创建output目录（如果不存在的话）
+    output_dir = os.path.join(script_dir, 'output')
+    os.makedirs(output_dir, exist_ok=True)  # 确保目录存在
+
+    # 修改路径
     base_name = os.path.splitext(input_path)[0]
-    output_path = f"{base_name}.lys"
+    output_path = os.path.join(output_dir, f"{os.path.basename(base_name)}.lys")
+    lrc_path = os.path.join(output_dir, f"{os.path.basename(base_name)}_trans.lrc")
+
+    # 写入LYS文件
     try:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lys_lines))
@@ -271,7 +285,6 @@ def ttml_to_lys(input_path):
     # 写入LRC文件
     lrc_generated = False
     if has_translations:
-        lrc_path = f"{base_name}_trans.lrc"
         try:
             with open(lrc_path, 'w', encoding='utf-8') as f:
                 for time_str, text in lrc_entries:
@@ -280,13 +293,12 @@ def ttml_to_lys(input_path):
             lrc_generated = True
         except Exception as e:
             logger.exception(f"写入LRC文件失败")
+            
+    return True, lrc_generated, revise_1, revise_2, output_path,lrc_path , matches, matches1
 
-    return True, lrc_generated
-
-
-if __name__ == '__main__':
+def main():
     if len(sys.argv) != 2:
-        input_path = input("\n请将TTML文件拖放到此窗口上，然后按回车键...")
+        input_path = input("\n请将TTML文件拖放到此窗口上或输入文件路径，按回车键进行转换\n文件路径: ")
     else:
         input_path = sys.argv[1]
 
@@ -302,16 +314,26 @@ if __name__ == '__main__':
 
     if not os.path.exists(input_path):
         logger.error(f"文件不存在: {input_path}")
-        input("文件不存在，按回车键退出...")
-        sys.exit(1)
+        input("\033[91m文件不存在！请重试\033[0m")
+        main()
 
-    success, lrc_generated = ttml_to_lys(input_path)
+    success, lrc_generated, revise_1, revise_2, output_path,lrc_path , matches, matches1 = ttml_to_lys(input_path)
     if success:
-        msg = f"转换成功: {input_path}"
+        print(f"\n================================\n\033[93m转换成功！\033[0m\n\033[94m输出文件: \033[0m{output_path}")
         if lrc_generated:
-            msg += " (包含翻译)"
-        print(msg)
+            print(f"\033[94m翻译文件: \033[0m{lrc_path}")
+        if revise_1:
+            print(f"处理文件时移除了 {len(matches)} 处xmlns=\"\"声明")
+        if revise_2:
+            print(f"处理文件时移除了 {len(matches1)} 处多余的括号")
+        if revise_1 or revise_2:
+            print(f"别担心，没动你原文件，但你的原文件确实很糟糕")
+        print(f"================================\n")
     else:
-        print(f"转换失败: {input_path}")
+        print(f"\033[91m转换失败: {input_path}\033[0m")
 
-    input("按回车键退出...")
+    main()
+
+
+if __name__ == '__main__':
+    main()
