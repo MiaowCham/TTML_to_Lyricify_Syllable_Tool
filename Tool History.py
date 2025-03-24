@@ -78,9 +78,10 @@ def calculate_property(alignment, background):
         return {None:3, 'left':4, 'right':5}.get(alignment, 3)
 
 def process_segment(spans, alignment, is_background):
-    """处理歌词段生成LYS行（已修复空格问题）"""
+    """处理歌词段生成LYS行（最终空格修复版）"""
     parts = []
-    pending_space = ''  # 跟踪待处理空格
+    pending_whitespace = ''  # 跟踪待处理的空白字符
+    
     for span in spans:
         try:
             begin = span.get('begin')
@@ -93,40 +94,36 @@ def process_segment(spans, alignment, is_background):
             if duration <= 0:
                 continue
             
-            # 合并前导空格和当前文本
-            raw_text = pending_space + (span.text or '')
-            text = raw_text.strip()
-            if not text:
-                # 处理纯空格span的情况
-                if raw_text:
-                    pending_space = raw_text
-                continue
+            # 合并前导空白和当前文本
+            full_text = pending_whitespace + (span.text or '')
             
-            # 处理尾部内容
+            # 分离文本和尾部空白
+            clean_text = full_text.rstrip(' ')  # 移除末尾空格但保留其他字符
+            trailing_spaces = len(full_text) - len(clean_text)
+            
+            # 处理span的尾部内容
             tail = span.tail or ''
-            space_segment = ''
-            non_space = ''
+            tail_clean = tail.lstrip(' ')  # 移除头部空格
+            leading_spaces = len(tail) - len(tail_clean)
             
-            # 分离空格和非空格内容
-            for i, c in enumerate(tail):
-                if c.isspace():
-                    space_segment += c
-                else:
-                    non_space = tail[i:]
-                    break
+            # 合并空格到前一个单词
+            word = clean_text
+            if trailing_spaces > 0 or leading_spaces > 0:
+                word += ' ' * (trailing_spaces + leading_spaces)
             
-            # 空格附加到当前单词，非空格保留到pending
-            text += space_segment
-            pending_space = non_space if non_space else ''
+            # 生成时间标记
+            if word:
+                parts.append(f"{word}({start},{duration})")
             
-            parts.append(f"{text}({start},{duration})")
+            # 更新待处理空白
+            pending_whitespace = tail_clean if not tail_clean.strip() else ''
         
         except Exception as e:
             log_message(f"处理span失败: {str(e)}", 'WARNING')
     
-    # 处理最后一个span后的未消耗内容
-    if pending_space.strip():
-        parts.append(f"{pending_space}(0,0)")
+    # 处理最后一个单词后的空白
+    if pending_whitespace.strip():
+        parts.append(f"{pending_whitespace}(0,0)")
     
     if not parts:
         return None
