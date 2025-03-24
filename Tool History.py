@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import xml.etree.ElementTree as ET
 from datetime import datetime, date
 
@@ -23,6 +24,22 @@ def log_message(message, level='INFO'):
             f.write(log_line)
     except Exception as e:
         print(f"无法写入日志文件: {e}")
+
+def preprocess_ttml(content):
+    """预处理TTML内容，移除xmlns=""声明"""
+    # 使用正则表达式精确匹配 xmlns=""
+    pattern = re.compile(r'\s+xmlns=""')
+    modified = False
+    
+    # 查找所有匹配项
+    matches = pattern.findall(content)
+    if matches:
+        modified = True
+        # 移除所有匹配的xmlns声明
+        content = pattern.sub('', content)
+        log_message(f"发现并移除了 {len(matches)} 处xmlns=\"\"声明")
+    
+    return content, modified
 
 def parse_time(time_str):
     """将时间字符串转换为毫秒"""
@@ -61,10 +78,9 @@ def calculate_property(alignment, background):
         return {None:3, 'left':4, 'right':5}.get(alignment, 3)
 
 def process_segment(spans, alignment, is_background):
-    """处理歌词段生成LYS行"""
+    """处理歌词段生成LYS行（已修复空格问题）"""
     parts = []
     pending_space = ''  # 跟踪待处理空格
-    
     for span in spans:
         try:
             begin = span.get('begin')
@@ -133,12 +149,23 @@ def process_translations(p_element):
 def ttml_to_lys(input_path):
     """主转换函数"""
     try:
-        tree = ET.parse(input_path)
+        # 读取文件内容并预处理
+        with open(input_path, 'r', encoding='utf-8') as f:
+            raw_content = f.read()
+        
+        # 预处理移除xmlns=""声明
+        processed_content, modified = preprocess_ttml(raw_content)
+        if modified:
+            print("已发现并删除了xmlns=\"\"声明")
+            log_message(f"处理文件 {input_path} 时移除了xmlns=\"\"声明")
+        
+        # 解析XML
+        root = ET.fromstring(processed_content)
+    
     except Exception as e:
         log_message(f"无法解析TTML文件: {input_path} - {str(e)}", 'ERROR')
         return False, False
     
-    root = tree.getroot()
     lys_lines = []
     lrc_entries = []
     has_translations = False
@@ -159,6 +186,7 @@ def ttml_to_lys(input_path):
                 translation = process_translations(p)
                 if translation:
                     has_translations = True
+                    log_message(f"开始处理翻译: {input_path}")
                 
                 # 获取时间信息
                 p_begin = p.get('begin')
@@ -234,6 +262,7 @@ if __name__ == '__main__':
         input("\n请将TTML文件拖放到此程序上，然后按回车键...")
     else:
         input_path = sys.argv[1]
+        log_message(f"=======================")
         log_message(f"开始处理文件: {input_path}")
         
         if not os.path.exists(input_path):
