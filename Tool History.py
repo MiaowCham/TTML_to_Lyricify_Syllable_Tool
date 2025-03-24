@@ -175,12 +175,12 @@ def ttml_to_lys(input_path):
         revise_1 = False
         revise_2 = False
         # 预处理移除xmlns=""声明
-        processed_content, modified,matches = preprocess_ttml(raw_content)
+        pro_processed_content, modified,matches = preprocess_ttml(raw_content)
         if modified:
             revise_1 = True
 
         # 预处理移除多余括号
-        processed_content, modified_1,matches1 = preprocess_ttml_1(raw_content)
+        processed_content, modified_1,matches1 = preprocess_ttml_1(pro_processed_content)
         if modified_1:
             revise_2 = True
 
@@ -315,6 +315,7 @@ def main():
     if not os.path.exists(input_path):
         logger.error(f"文件不存在: {input_path}")
         input("\033[91m文件不存在！请重试\033[0m")
+        input("程序结束，按下回车继续...").strip().lower()
         main()
 
     success, lrc_generated, revise_1, revise_2, output_path,lrc_path , matches, matches1 = ttml_to_lys(input_path)
@@ -332,6 +333,8 @@ def main():
     else:
         print(f"\033[91m转换失败: {input_path}\033[0m")
 
+    # 如果需要继续运行，重新调用 main()，否则调用 sys.exit() 来退出
+    input("程序结束，按下回车继续...").strip().lower()
     main()
 
 
