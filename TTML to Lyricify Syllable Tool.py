@@ -1,5 +1,5 @@
 #-*- coding: UTF-8-*-
-
+#记得改一下版本号（
 import os
 from re import compile, Pattern, Match
 import string
@@ -25,22 +25,22 @@ from datetime import datetime
 # 日志文件夹路径
 log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log')
 
-# 读取 log.set 文件并检查是否启用日志
 log_set_file = os.path.join(log_dir, 'log.set')
 
-def is_logging_enabled():
-    """检查 log.set 文件中是否有 'log_on:true'（不区分大小写）"""
-    if os.path.exists(log_set_file):
-        with open(log_set_file, 'r') as f:
-            for line in f:
-                # 判断是否包含 'log_on:true'（不区分大小写）
-                if 'log_on:true' in line.strip().lower():
-                    return True
-    return False
+def is_logging_enabled(input_path: str) -> bool:
+    # 检查用户输入是否为 'Enable logging'，启用日志
+    return input_path.strip().lower() == "enable logging"
 
-if is_logging_enabled():
-    print(f"已启用日志记录，输出目录为 软件目录/log")
-    logger.add(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log',f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log"),level='DEBUG')
+def setup_logger(input_path: str):
+    # 根据用户输入设置日志
+    if is_logging_enabled(input_path):
+        print("\n已启用本次运行的日志记录，输出目录为 软件目录/log")
+        # 确保日志文件夹存在
+        os.makedirs(log_dir, exist_ok=True)
+        # 添加日志文件
+        logger.add(os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log"), level='DEBUG')
+        return True
+    return False
 
 class TTMLTime:
     __pattern: Pattern = compile(r'\d+')
@@ -167,39 +167,49 @@ def ttml_to_lys(input_path):
     trans_path: str = ''
     try:
         # 解析XML文件
+        logger.debug(f"尝试解析XML文件")
         dom: Document = xml.dom.minidom.parse(input_path)  # 假设文件名是 'books.xml'
         tt: Document = dom.documentElement  # 获取根元素
 
         # 获取tt中的body/head元素
+        logger.debug(f"尝试获取tt中的body/head元素")
         body: Element = tt.getElementsByTagName('body')[0]
         head: Element = tt.getElementsByTagName('head')[0]
 
         if body and head:
             # 获取body/head中的<div>/<metadata>子元素
+            logger.debug(f"尝试获取<div>/<metadata>子元素")
             div: Element = body.getElementsByTagName('div')[0]
             metadata: Element = head.getElementsByTagName('metadata')[0]
 
             # 获取div中的所有<p>子元素
+            logger.debug(f"尝试获取div中的所有<p>子元素")
             p_elements: NodeList[Element] = div.getElementsByTagName('p')
             agent_elements: NodeList[Element] = metadata.getElementsByTagName('ttm:agent')
 
             # 检查是否有对唱
+            logger.debug(f"检查是否有对唱")
             for meta in agent_elements:
                 if meta.getAttribute('xml:id') != 'v1':
                     TTMLLine.have_duet = True
+                    logger.debug(f"发现对唱")
 
             lines: list[TTMLLine] = []
             # 遍历每个<p>元素
+            logger.debug(f"开始执行转换")
             for p in p_elements:
                 lines.append(TTMLLine(p))
-
                 # 打印行
-                logger.info(f"TTML第{p_elements.index(p)}行内容：{lines[-1].to_str()[0][0]}")
+                logger.info(f"TTML第{p_elements.index(p)}行转换结果：{lines[-1].to_str()[0][0]}")
 
+            print(f"实时转换结果可能与实际输出有差异，请以实际输出为准")
+            
             # 获取当前.py文件的目录路径
+            logger.debug(f"获取脚本所在的目录路径")
             script_dir = os.path.dirname(os.path.abspath(__file__))
 
             # 创建output目录（如果不存在的话）
+            logger.debug(f"创建output目录（如果不存在的话）")
             output_dir = os.path.join(script_dir, 'output')
             os.makedirs(output_dir, exist_ok=True)  # 确保目录存在
 
@@ -211,10 +221,13 @@ def ttml_to_lys(input_path):
 
             lyric_path = os.path.join(output_dir, f"{os.path.basename(base_name)}.lys")
             lyric_file = open(lyric_path, 'w', encoding='utf8')
+            logger.debug(f"写入lys文件")
 
             if TTMLLine.have_ts:
+                logger.debug(f"翻译行存在")
                 trans_path = os.path.join(output_dir, f"{os.path.basename(base_name)}_trans.lrc")
                 trans_file = open(trans_path, 'w', encoding='utf8')
+                logger.debug(f"写入lrc翻译文件")
 
             count: int = 0
 
@@ -244,7 +257,39 @@ def ttml_to_lys(input_path):
 
 def step(argv_h):
     if len(sys.argv) != 2 or argv_h == True: #如果第一次是图标输入，此后只能窗口输入
-        input_path = input("\n请将TTML文件拖放到此窗口上或输入文件路径，按回车键进行转换\n文件路径: ")
+        input_path = input("\n请将TTML文件拖放到此窗口上或输入文件路径，按回车键进行转换\n输入\"help\"查看帮助或者当前版本可能存在的bug\n文件路径: ")
+        # 检查是否启用日志
+        if is_logging_enabled(input_path):
+            setup_logger(input_path)
+            logger.info("日志保存已启用")
+            step(argv_h)  # 重新提示用户输入
+            return
+        # 检查是否输入 "about"
+        if input_path.strip().lower() == "about":
+            # 输出关于信息并记录日志
+            logger.info("输出\"关于\"信息")
+            logger.info("版本号 v5.1")
+            print("\n\033[94m"
+            "TTML to Lyricify Syllable Tool\n\033[0m"
+            "一个适用于 AMLL TTML 文件转 Lyricify Syllable 的小工具\n"
+            "版本号：v5.1\n"
+            "更新内容：修复背景人声ID错误的问题/修改启用日志的判断条件/新增\"关于\"文本\n\n"
+            "项目地址：https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool\n"
+            "Github Acitons 版本：https://github.com/HKLHaoBin/ttml_to_lys")
+            step(argv_h)  # 重新提示用户输入
+            return
+        # 检查是否输入 "help"
+        if input_path.strip().lower() == "help":
+            # 输出帮助信息
+            print("\n\033[94m"
+            "帮助信息\n\033[0m"
+            "- 输入\"Enable logging\"启用日志保存\n"
+            "- 输入\"about\"以查看关于及版本信息\n"
+            "\033[94m待修复bug\n\033[0m"
+            "- 在TTML原文件及文件路径无误的情况下仍提示文件不存在，请检查您的文件路径及文件名是否包含引号或单引号（或者其他非法字符），去除后即可正常读取")
+            step(argv_h)  # 重新提示用户输入
+            return
+        
         logger.info(f"==========================")
         logger.debug(f"窗口输入")
         logger.debug(f"图标输入历史: {argv_h}")
@@ -270,6 +315,7 @@ def step(argv_h):
     if not os.path.exists(input_path):
         logger.error(f"文件不存在: \"{input_path}\"")
         print("\033[91m文件不存在！请重试\033[0m")
+        print("如果确定文件存在，请检查您的文件路径及文件名是否包含引号或单引号（或者其他非法字符），去除后即可正常读取")
         step(argv_h)
 
     success, lyric_path, trans_path = ttml_to_lys(input_path)
@@ -292,4 +338,3 @@ def step(argv_h):
 if __name__ == '__main__':
     argv = False
     step(argv)
-
