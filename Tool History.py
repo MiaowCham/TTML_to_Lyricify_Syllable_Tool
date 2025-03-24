@@ -24,6 +24,42 @@ namespaces = {
     'amll': 'http://www.example.com/ns/amll',
     'itunes': 'http://music.apple.com/lyric-ttml-internal'
 }
+'''
+from datetime import datetime
+datetime.now().strftime('%Y-%m-%d')
+
+# 获取日志文件夹路径
+log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log')
+
+# 获取已有日志文件并计算编号
+existing_logs = [f for f in os.listdir(log_dir) if f.startswith('') and f.endswith('.log')]
+log_number = len(existing_logs) + 1  # 下一个编号
+'''
+#logger.add(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log',f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log"),level='DEBUG')
+#将上面这行改为注释可以取消debug输出
+
+from datetime import datetime
+
+# 日志文件夹路径
+log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log')
+
+# 读取 log.set 文件并检查是否启用日志
+log_set_file = os.path.join(log_dir, 'log.set')
+
+def is_logging_enabled():
+    """检查 log.set 文件中是否有 'log_on:true'（不区分大小写）"""
+    if os.path.exists(log_set_file):
+        with open(log_set_file, 'r') as f:
+            for line in f:
+                # 判断是否包含 'log_on:true'（不区分大小写）
+                if 'log_on:true' in line.strip().lower():
+                    return True
+    return False
+
+if is_logging_enabled():
+    print(f"已启用日志记录，输出目录为 软件目录/log")
+    logger.add(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log',f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log"),level='DEBUG')
+
 
 def preprocess_ttml(content):
     """预处理TTML内容，移除xmlns=""声明"""
@@ -296,13 +332,22 @@ def ttml_to_lys(input_path):
             
     return True, lrc_generated, revise_1, revise_2, output_path,lrc_path , matches, matches1
 
-def main():
-    if len(sys.argv) != 2:
+def main(argv_h):
+    if len(sys.argv) != 2 or argv_h == True: #如果第一次是图标输入，此后只能窗口输入
         input_path = input("\n请将TTML文件拖放到此窗口上或输入文件路径，按回车键进行转换\n文件路径: ")
+        logger.info(f"==========================")
+        logger.debug(f"窗口输入")
+        logger.debug(f"图标输入历史: {argv_h}")
+        logger.debug(f"len(sys.argv): {len(sys.argv)}")
     else:
         input_path = sys.argv[1]
-
-    logger.debug(f"用户输入: {input_path}")
+        argv_h = True
+        logger.info(f"==========================")
+        logger.debug(f"图标输入")
+        logger.debug(f"图标输入历史: {argv_h}")
+        logger.debug(f"len(sys.argv): {len(sys.argv)}")
+        
+    logger.debug(f"用户输入: \"{input_path}\"")
 
     if input_path.startswith("&"):
         logger.debug(f"检测到 VS Code & PowerShell 受害者，尝试修复路径")
@@ -310,33 +355,33 @@ def main():
         logger.debug(f"未检测到 VS Code & PowerShell 受害者迹象，仍然尝试修复路径")
     input_path = input_path.lstrip("&").strip(string.whitespace + "'\"")
 
-    logger.debug(f"接收到文件: {input_path}")
+    logger.debug(f"接收到文件: \"{input_path}\"")
 
     if not os.path.exists(input_path):
-        logger.error(f"文件不存在: {input_path}")
-        input("\033[91m文件不存在！请重试\033[0m")
-        input("程序结束，按下回车继续...").strip().lower()
-        main()
+        logger.error(f"文件不存在: \"{input_path}\"")
+        print("\033[91m文件不存在！请重试\033[0m")
+        main(argv_h)
 
     success, lrc_generated, revise_1, revise_2, output_path,lrc_path , matches, matches1 = ttml_to_lys(input_path)
     if success:
-        print(f"\n================================\n\033[93m转换成功！\033[0m\n\033[94m输出文件: \033[0m{output_path}")
+        print(f"\n================================\n\033[93m转换成功！\033[0m\n\033[94m输出文件: \033[0m\"{output_path}\"")
         if lrc_generated:
-            print(f"\033[94m翻译文件: \033[0m{lrc_path}")
+            print(f"\033[94m翻译文件: \033[0m\"{lrc_path}\"")
         if revise_1:
             print(f"处理文件时移除了 {len(matches)} 处xmlns=\"\"声明")
         if revise_2:
             print(f"处理文件时移除了 {len(matches1)} 处多余的括号")
         if revise_1 or revise_2:
-            print(f"别担心，没动你原文件，但你的原文件确实很糟糕")
+            print(f"别担心，没动你原文件，但你的原文件确实很糟糕（")
         print(f"================================\n")
     else:
         print(f"\033[91m转换失败: {input_path}\033[0m")
 
-    # 如果需要继续运行，重新调用 main()，否则调用 sys.exit() 来退出
-    input("程序结束，按下回车继续...").strip().lower()
-    main()
+    # 传回argv_h信息，保证后续只能窗口输入
+    input_path = ""
+    main(argv_h)
 
 
 if __name__ == '__main__':
-    main()
+    argv = False
+    main(argv)
