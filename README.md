@@ -22,7 +22,6 @@ Now simply drag-and-drop to complete standardized conversion! Even supports tran
    - Drag-and-drop TTML files directly onto the tool icon or command line window  
    - Default output directory: `output` folder (customizable path)  
    - Requires Python 3.x+ environment (tested on 3.11 & 3.12)  
-   - Enable logging by adding "log_on:True" in `log\log.set`  
 
 ### Detailed information: [Prompts & Conversion Principles](/Prompt_words_&_Conversion_principles.md)  
 
