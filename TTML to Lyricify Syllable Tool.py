@@ -129,6 +129,7 @@ class TTMLLine:
                 elif role == "x-bg":
                     # 和声行
                     self.__bg_line = TTMLLine(child, True)
+                    self.__bg_line.__is_duet = self.__is_duet
                 elif role == "x-translation":
                     # 翻译行
                     TTMLLine.have_ts = True
