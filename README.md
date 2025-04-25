@@ -1,11 +1,5 @@
 # TTML to Lyricify Syllable Tool
 
-<div align=center>
-   
-###### [English](./README.md) / 简体中文
-
-</div>
-
 >[!note]
 >包含用户图形界面的工具现已推出！
 
