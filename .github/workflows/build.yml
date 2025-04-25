@@ -10,6 +10,11 @@ jobs:
   build:
     runs-on: windows-latest
     
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONLEGACYWINDOWSSTDIO: utf-8
+      PYTHONUTF8: 1
+    
     steps:
     - uses: actions/checkout@v4
     
@@ -33,7 +38,7 @@ jobs:
         
     - name: Build EXE
       run: |
-        python build_exe.py
+        python -X utf8 build_exe.py
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4
