@@ -51,16 +51,33 @@ except ImportError:
 
 from datetime import datetime
 
+def get_app_path():
+    """获取应用程序路径，处理打包后的情况"""
+    if getattr(sys, 'frozen', False):
+        # 如果是打包后的可执行文件
+        return os.path.dirname(sys.executable)
+    else:
+        # 如果是开发环境
+        return os.path.dirname(os.path.abspath(__file__))
+
 # 日志文件夹路径
-log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log')
+log_dir = os.path.join(get_app_path(), 'log')
 os.makedirs(log_dir, exist_ok=True)  # 确保日志文件夹存在
 
 # 设置日志记录
 def setup_logger(enabled=False):
     if enabled:
-        logger.add(os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log"), level='DEBUG')
-        logger.info("日志记录已启用")
-        return True
+        try:
+            # 移除所有现有的处理器
+            logger.remove()
+            # 添加新的文件处理器
+            log_file = os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log")
+            logger.add(log_file, level='DEBUG', rotation="1 day", retention="7 days")
+            logger.info("日志记录已启用")
+            return True
+        except Exception as e:
+            print(f"设置日志失败: {str(e)}")
+            return False
     return False
 
 # TTML转换相关类和函数
@@ -268,7 +285,9 @@ class TTMLToLyricifySyllableApp:
         
         # 设置图标（如果有）
         try:
-            self.root.iconbitmap(os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico"))
+            icon_path = os.path.join(get_app_path(), "icon.ico")
+            if os.path.exists(icon_path):
+                self.root.iconbitmap(icon_path)
         except:
             pass
         
@@ -289,6 +308,22 @@ class TTMLToLyricifySyllableApp:
         
         # 显示欢迎信息
         self.set_status("欢迎使用TTML转Lyricify Syllable工具")
+        
+        # 绑定日志复选框的变量跟踪
+        self.log_enabled.trace_add("write", self.on_log_enabled_change)
+        
+    def on_log_enabled_change(self, *args):
+        """当日志启用状态改变时调用"""
+        if self.log_enabled.get():
+            if setup_logger(True):
+                self.set_status("日志记录已启用")
+            else:
+                self.set_status("日志记录启用失败")
+                self.log_enabled.set(False)
+        else:
+            # 移除所有处理器
+            logger.remove()
+            self.set_status("日志记录已禁用")
         
     def setup_styles(self):
         # 设置ttk样式
@@ -323,18 +358,14 @@ class TTMLToLyricifySyllableApp:
         # 右侧标签和文本框
         ttk.Label(right_frame, text="Lyricify Syllable输出").pack(anchor=tk.W, pady=(0, 5))
         
-        # 创建右侧垂直分割窗口
-        right_pane = ttk.PanedWindow(right_frame, orient=tk.VERTICAL)
-        right_pane.pack(fill=tk.BOTH, expand=True)
-        
         # 歌词输出框
-        self.output_text = tk.Text(right_pane, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED, height=10)
-        right_pane.add(self.output_text, weight=1)
+        self.output_text = tk.Text(right_frame, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED)
+        self.output_text.pack(fill=tk.BOTH, expand=True)
         
-        # 翻译输出框
+        # 翻译标签和输出框
         ttk.Label(right_frame, text="翻译输出").pack(anchor=tk.W, pady=(10, 5))
-        self.trans_text = tk.Text(right_pane, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED, height=10)
-        right_pane.add(self.trans_text, weight=1)
+        self.trans_text = tk.Text(right_frame, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED, height=8)
+        self.trans_text.pack(fill=tk.X, expand=False)
         
         # 底部按钮框架
         bottom_frame = ttk.Frame(self.root)
@@ -354,14 +385,14 @@ class TTMLToLyricifySyllableApp:
         right_buttons_frame = ttk.Frame(bottom_frame)
         right_buttons_frame.pack(side=tk.RIGHT)
         
+        self.convert_btn = ttk.Button(right_buttons_frame, text="转换", command=self.convert_ttml)
+        self.convert_btn.pack(side=tk.RIGHT, padx=(5, 0))
+        
         self.copy_lyrics_btn = ttk.Button(right_buttons_frame, text="复制歌词", command=self.copy_lyrics_to_clipboard, state=tk.DISABLED)
         self.copy_lyrics_btn.pack(side=tk.RIGHT, padx=(5, 0))
         
         self.copy_trans_btn = ttk.Button(right_buttons_frame, text="复制翻译", command=self.copy_trans_to_clipboard, state=tk.DISABLED)
-        self.copy_trans_btn.pack(side=tk.RIGHT, padx=(5, 0))
-        
-        self.convert_btn = ttk.Button(right_buttons_frame, text="转换", command=self.convert_ttml)
-        self.convert_btn.pack(side=tk.RIGHT)
+        self.copy_trans_btn.pack(side=tk.RIGHT)
         
         # 状态框架
         status_frame = ttk.Frame(self.root)
@@ -506,10 +537,6 @@ class TTMLToLyricifySyllableApp:
             messagebox.showinfo("提示", "请先输入TTML内容")
             return
         
-        # 启用日志（如果选中）
-        if self.log_enabled.get():
-            setup_logger(True)
-        
         # 执行转换
         try:
             # 显示转换中状态
@@ -541,16 +568,8 @@ class TTMLToLyricifySyllableApp:
                 if TTMLLine.have_pair > 0:
                     status_msg += f"，移除了 {TTMLLine.have_pair} 处括号"
                 self.set_status(status_msg)
-                
-                # 自动复制歌词到剪贴板
-                try:
-                    pyperclip.copy(lyric_text)
-                    self.set_status(status_msg + "，已自动复制歌词到剪贴板")
-                except:
-                    pass  # 忽略剪贴板错误
             else:
                 self.set_status("转换失败，请检查TTML格式是否正确")
-                messagebox.showerror("转换失败", "无法解析TTML内容，请检查格式是否正确")
         except Exception as e:
             self.set_status("转换失败，请检查TTML格式是否正确")
             logger.exception(f"转换失败: {str(e)}")
