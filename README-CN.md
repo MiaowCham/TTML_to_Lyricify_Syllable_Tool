@@ -6,6 +6,9 @@
 
 </div>
 
+>[!note]
+>包含用户图形界面的工具现已推出！
+
 **一个适用于 AMLL TTML 文件转 Lyricify Syllable 的小工具**
 
 开发者是[**喵锵**](https://github.com/MiaowCham)，初始版本由 DeepSeek 构建。<br>
