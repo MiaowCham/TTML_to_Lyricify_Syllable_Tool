@@ -323,18 +323,14 @@ class TTMLToLyricifySyllableApp:
         # 右侧标签和文本框
         ttk.Label(right_frame, text="Lyricify Syllable输出").pack(anchor=tk.W, pady=(0, 5))
         
-        # 创建右侧垂直分割窗口
-        right_pane = ttk.PanedWindow(right_frame, orient=tk.VERTICAL)
-        right_pane.pack(fill=tk.BOTH, expand=True)
-        
         # 歌词输出框
-        self.output_text = tk.Text(right_pane, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED, height=10)
-        right_pane.add(self.output_text, weight=1)
+        self.output_text = tk.Text(right_frame, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED)
+        self.output_text.pack(fill=tk.BOTH, expand=True)
         
-        # 翻译输出框
+        # 翻译标签和输出框
         ttk.Label(right_frame, text="翻译输出").pack(anchor=tk.W, pady=(10, 5))
-        self.trans_text = tk.Text(right_pane, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED, height=10)
-        right_pane.add(self.trans_text, weight=1)
+        self.trans_text = tk.Text(right_frame, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED, height=8)
+        self.trans_text.pack(fill=tk.X, expand=False)
         
         # 底部按钮框架
         bottom_frame = ttk.Frame(self.root)
@@ -354,14 +350,14 @@ class TTMLToLyricifySyllableApp:
         right_buttons_frame = ttk.Frame(bottom_frame)
         right_buttons_frame.pack(side=tk.RIGHT)
         
+        self.convert_btn = ttk.Button(right_buttons_frame, text="转换", command=self.convert_ttml)
+        self.convert_btn.pack(side=tk.RIGHT, padx=(5, 0))
+        
         self.copy_lyrics_btn = ttk.Button(right_buttons_frame, text="复制歌词", command=self.copy_lyrics_to_clipboard, state=tk.DISABLED)
         self.copy_lyrics_btn.pack(side=tk.RIGHT, padx=(5, 0))
         
         self.copy_trans_btn = ttk.Button(right_buttons_frame, text="复制翻译", command=self.copy_trans_to_clipboard, state=tk.DISABLED)
-        self.copy_trans_btn.pack(side=tk.RIGHT, padx=(5, 0))
-        
-        self.convert_btn = ttk.Button(right_buttons_frame, text="转换", command=self.convert_ttml)
-        self.convert_btn.pack(side=tk.RIGHT)
+        self.copy_trans_btn.pack(side=tk.RIGHT)
         
         # 状态框架
         status_frame = ttk.Frame(self.root)
@@ -541,16 +537,8 @@ class TTMLToLyricifySyllableApp:
                 if TTMLLine.have_pair > 0:
                     status_msg += f"，移除了 {TTMLLine.have_pair} 处括号"
                 self.set_status(status_msg)
-                
-                # 自动复制歌词到剪贴板
-                try:
-                    pyperclip.copy(lyric_text)
-                    self.set_status(status_msg + "，已自动复制歌词到剪贴板")
-                except:
-                    pass  # 忽略剪贴板错误
             else:
                 self.set_status("转换失败，请检查TTML格式是否正确")
-                messagebox.showerror("转换失败", "无法解析TTML内容，请检查格式是否正确")
         except Exception as e:
             self.set_status("转换失败，请检查TTML格式是否正确")
             logger.exception(f"转换失败: {str(e)}")

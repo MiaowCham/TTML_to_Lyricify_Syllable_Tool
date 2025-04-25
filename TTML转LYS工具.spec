@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['d:\\Documents\\GitHub\\TTML_to_Lyricify_Syllable_Tool\\TTML_to_LYS_GUI.py'],
+    ['d:\\Documents\\GitHub\\TTML_to_Lyricify_Syllable_Tool\\TTML_to_Lyricify_Syllable_GUI.py'],
     pathex=[],
     binaries=[],
-    datas=[('log', 'log')],
+    datas=[('d:\\Documents\\GitHub\\TTML_to_Lyricify_Syllable_Tool\\log', 'log')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
