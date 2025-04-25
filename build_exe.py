@@ -147,7 +147,7 @@ def build_exe():
             "--noconfirm",
             "--onefile",
             "--windowed",
-            "--name=TTML转LYS工具",
+            "--name=TTML_to_LYS_Tool",
             f"--add-data={log_dir}{os.pathsep}log",
         ]
     else:
@@ -159,7 +159,7 @@ def build_exe():
             "--noconfirm",
             "--onefile",
             "--windowed",
-            "--name=TTML转LYS工具",
+            "--name=TTML_to_LYS_Tool",
             f"--add-data={log_dir}{os.pathsep}log",
         ]
     
@@ -195,7 +195,7 @@ def build_exe():
             sys.exit(1)
             
         print("\n构建完成！")
-        print(f"可执行文件位于: {os.path.join(dist_dir, 'TTML转LYS工具.exe')}")
+        print(f"可执行文件位于: {os.path.join(dist_dir, 'TTML_to_LYS_Tool.exe')}")
         
     except Exception as e:
         print(f"\n发生错误: {str(e)}")

@@ -40,14 +40,18 @@ jobs:
       run: |
         python -X utf8 build_exe.py
         
+    - name: Rename EXE
+      run: |
+        mv "dist/TTML转LYS工具.exe" "dist/TTML_to_LYS_Tool.exe"
+        
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: TTML转LYS工具
-        path: dist/TTML转LYS工具.exe
+        name: TTML_to_LYS_Tool
+        path: dist/TTML_to_LYS_Tool.exe
         
     - name: Upload to Release
       if: github.event_name == 'release'
       uses: softprops/action-gh-release@v1
       with:
-        files: dist/TTML转LYS工具.exe 
+        files: dist/TTML_to_LYS_Tool.exe 
