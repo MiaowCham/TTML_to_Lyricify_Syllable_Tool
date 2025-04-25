@@ -51,16 +51,33 @@ except ImportError:
 
 from datetime import datetime
 
+def get_app_path():
+    """获取应用程序路径，处理打包后的情况"""
+    if getattr(sys, 'frozen', False):
+        # 如果是打包后的可执行文件
+        return os.path.dirname(sys.executable)
+    else:
+        # 如果是开发环境
+        return os.path.dirname(os.path.abspath(__file__))
+
 # 日志文件夹路径
-log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log')
+log_dir = os.path.join(get_app_path(), 'log')
 os.makedirs(log_dir, exist_ok=True)  # 确保日志文件夹存在
 
 # 设置日志记录
 def setup_logger(enabled=False):
     if enabled:
-        logger.add(os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log"), level='DEBUG')
-        logger.info("日志记录已启用")
-        return True
+        try:
+            # 移除所有现有的处理器
+            logger.remove()
+            # 添加新的文件处理器
+            log_file = os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log")
+            logger.add(log_file, level='DEBUG', rotation="1 day", retention="7 days")
+            logger.info("日志记录已启用")
+            return True
+        except Exception as e:
+            print(f"设置日志失败: {str(e)}")
+            return False
     return False
 
 # TTML转换相关类和函数
@@ -268,7 +285,9 @@ class TTMLToLyricifySyllableApp:
         
         # 设置图标（如果有）
         try:
-            self.root.iconbitmap(os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico"))
+            icon_path = os.path.join(get_app_path(), "icon.ico")
+            if os.path.exists(icon_path):
+                self.root.iconbitmap(icon_path)
         except:
             pass
         
@@ -289,6 +308,22 @@ class TTMLToLyricifySyllableApp:
         
         # 显示欢迎信息
         self.set_status("欢迎使用TTML转Lyricify Syllable工具")
+        
+        # 绑定日志复选框的变量跟踪
+        self.log_enabled.trace_add("write", self.on_log_enabled_change)
+        
+    def on_log_enabled_change(self, *args):
+        """当日志启用状态改变时调用"""
+        if self.log_enabled.get():
+            if setup_logger(True):
+                self.set_status("日志记录已启用")
+            else:
+                self.set_status("日志记录启用失败")
+                self.log_enabled.set(False)
+        else:
+            # 移除所有处理器
+            logger.remove()
+            self.set_status("日志记录已禁用")
         
     def setup_styles(self):
         # 设置ttk样式
@@ -501,10 +536,6 @@ class TTMLToLyricifySyllableApp:
             self.set_status("请先输入TTML内容")
             messagebox.showinfo("提示", "请先输入TTML内容")
             return
-        
-        # 启用日志（如果选中）
-        if self.log_enabled.get():
-            setup_logger(True)
         
         # 执行转换
         try:
