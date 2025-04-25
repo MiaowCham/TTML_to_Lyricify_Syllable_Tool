@@ -92,7 +92,8 @@ def build_exe():
             print("1. 使用管理员权限打开命令提示符")
             print(f"2. 运行: {sys.executable} -m pip install --user pyinstaller")
             print("3. 安装完成后重新运行此脚本")
-            input("\n按Enter键退出...")
+            if not os.environ.get('GITHUB_ACTIONS'):  # 只在非GitHub Actions环境中等待用户输入
+                input("\n按Enter键退出...")
             sys.exit(1)
     else:
         print("已检测到PyInstaller")
@@ -121,6 +122,8 @@ def build_exe():
         print(f"错误: 找不到主程序文件。请确保以下文件之一存在:")
         print(f"  - {os.path.join(current_dir, 'TTML_to_Lyricify_Syllable_GUI.py')}")
         print(f"  - {os.path.join(current_dir, 'TTML_to_LYS_GUI.py')}")
+        if not os.environ.get('GITHUB_ACTIONS'):  # 只在非GitHub Actions环境中等待用户输入
+            input("\n按Enter键退出...")
         sys.exit(1)
     
     # 直接搜索可执行文件
@@ -204,4 +207,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n发生意外错误: {str(e)}")
     finally:
-        input("\n按Enter键退出...")  # 防止窗口立即关闭
+        if not os.environ.get('GITHUB_ACTIONS'):  # 只在非GitHub Actions环境中等待用户输入
+            input("\n按Enter键退出...")  # 防止窗口立即关闭
