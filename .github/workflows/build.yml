@@ -40,10 +40,6 @@ jobs:
       run: |
         python -X utf8 build_exe.py
         
-    - name: Rename EXE
-      run: |
-        mv "dist/TTML转LYS工具.exe" "dist/TTML_to_LYS_Tool.exe"
-        
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
