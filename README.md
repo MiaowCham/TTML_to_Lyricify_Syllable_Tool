@@ -9,6 +9,9 @@
 > [!WARNING]
 > English readme is temporarily translated by DeepSeek
 
+>[!note]
+>包含用户图形界面的工具现已推出！
+
 **A lightweight tool for converting AMLL TTML files to Lyricify Syllable format**  
 
 Developer: [**MiaowCham**](https://github.com/MiaowCham), initial version built by DeepSeek.  
