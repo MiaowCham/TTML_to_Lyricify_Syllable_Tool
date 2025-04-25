@@ -31,7 +31,7 @@ jobs:
           pyinstaller --noconfirm --onefile --windowed --name="TTML转LYS工具" --add-data="log;log" TTML_to_LYS_GUI.py
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: TTML转LYS工具
           path: dist/TTML转LYS工具.exe
