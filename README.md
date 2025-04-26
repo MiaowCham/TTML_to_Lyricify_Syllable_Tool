@@ -2,13 +2,14 @@
 
 >[!note]
 >包含用户图形界面的工具现已推出！
+>[跳转至Release下载](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/releases/)
 
 **一个适用于 AMLL TTML 文件转 Lyricify Syllable 的小工具**
 
 开发者是[**喵锵**](https://github.com/MiaowCham)，初始版本由 DeepSeek 构建。<br>
 [**浩彬**](https://github.com/HKLHaoBin)将工具进行了修改，得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
 
-TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。并且使用 AMLL TTML Tool 输出的 Lys 格式及其不规范，TTML to Lyricify Syllable Tool 就是为了解决这个问题而诞生的。
+TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。并且使用 AMLL TTML Tool 输出的 Lys ~格式及其不规范~，TTML to Lyricify Syllable Tool 就是为了解决这个问题而诞生的。
 
 现在，一拖、一按，即可完成规范化转换！甚至可以提取翻译并单独输出。
 
@@ -17,27 +18,21 @@ TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。
    - 默认输出目录为`output`文件夹,具体输出路径可自行修改
    - 本工具需要 Python 3.x 以上环境（实际仅在3.11和3.12测试）
 
-### 详细信息请见 [提示词及转换原理](/Prompt_words_&_Conversion_principles.md)
+###### 详细信息请见 [提示词及转换原理](/Prompt_words_&_Conversion_principles.md)
+
+## TTML to Lyricify Syllable GUI
+基于 `tkinter` 实现的基础 GUI 功能，通过 `PyInstaller` 进行打包构建
+>~终于不用对着黑框框转换了~
+
+### 您可以访问 [Release](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/releases/) 下载 Release 版或前往 [Github Action](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/actions/workflows/build.yml) 下载最新构建版
+
+GUI版本不会主动输出 `.lys` 文件，仅会在勾选日志记录后输出日志信息至 /log 文件夹。您可以点击复制按钮进行手动复制输出结果<br>
+由于转换实现方式较为复杂，在部分情况下（如导入文字过多、转换时）可能会出现性能问题甚至未响应，应属正常现象
 
 ## [TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)
 **TTML to Lys on Github** 主要用于实现从 GitHub Issue 中获取歌词内容，将 ttml 格式歌词转换为 lys，然后将处理后的结果以评论的形式附加到该 Issue 中。该工具通过 Python 实现，依赖于 GitHub API 和正则表达式技术，能够高效、智能地完成歌词内容的清理工作。
 
 ### > [点击这里使用 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys/issues/new/choose) <
-
-### **使用方法：**
-1. 新建`issue 议题`，选择`TTML歌词转Lys`模板
-3. 将需要转换的 **ttml** 格式的歌词复制到`Description 描述`中
-4. 发送 **issue** 并等待脚本转换
-**转换完成后 Github-actions 会将结果回复在该 issue 下**
-###### 没了，就这么简单（乐
-### **注意事项：**
-- 尽量将标题改为文件名或歌曲名，以便区分
-- issue 的`Label 标签`必需是`ttml_to_lys`才会触发转换
-
-### 功能特点
- **GitHub 集成**：
-   - 从指定 GitHub Issue 中提取内容。
-   - 将修正后的结果以评论形式提交到相应的 Issue 中。
 
 ## 示例
 假设待处理内容为`test.ttml`：
