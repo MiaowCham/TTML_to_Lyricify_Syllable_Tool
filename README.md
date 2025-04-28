@@ -1,15 +1,19 @@
 # TTML to Lyricify Syllable Tool
+[![MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/blob/main/LICENSE)
+[![Static Badge](https://img.shields.io/badge/Languages-Python-blue.svg)](https://github.com/search?q=repo%3AMiaowCham%2FTTML_to_Lyricify_Syllable_Tool++language%3APython&type=code)
 
 >[!note]
 >包含用户图形界面的工具现已推出！
 >[跳转至Release下载](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/releases/)
 
-**一个适用于 AMLL TTML 文件转 Lyricify Syllable 的小工具**
+**一个适用于 TTML (AMLL标准) 文件转 Lyricify Syllable 的小工具**
 
 开发者是[**喵锵**](https://github.com/MiaowCham)，初始版本由 DeepSeek 构建。<br>
 [**浩彬**](https://github.com/HKLHaoBin)将工具进行了修改，得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
 
-TTML 是 AMLL 使用的歌词文件，但很不幸的是：他们并不兼容。并且使用 AMLL TTML Tool 输出的 Lys ~格式及其不规范~，TTML to Lyricify Syllable Tool 就是为了解决这个问题而诞生的。
+TTML (AMLL标准) 是 AMLL 默认使用的歌词文件；Lyricify Syllable 是 Lyricify 使用的歌词文件。他们都是为实现 Apple Music 样式歌词而制作的格式/规范。但很不幸的是：他们并不兼容。~并且使用 AMLL TTML Tool 输出的 Lyricify Syllable 格式及其不规范~。TTML to Lyricify Syllable Tool 就是为了解决这个问题而诞生的。
+>***AMLL TTML Tool 现已去除（~注释掉~）相关导出功能（按键）*** <br>
+>需要将 TTML 转换到别的格式？试试 [TTML TRANSLATER](https://github.com/ranhengzhang/ttml-translater)
 
 现在，一拖、一按，即可完成规范化转换！甚至可以提取翻译并单独输出。
 
@@ -53,13 +57,16 @@ GUI版本不会主动输出 `.lys` 文件，仅会在勾选日志记录后输出
 - 感谢 [**FanSh**](https://github.com/fred913/) 修改了部分不合理的内容并优化了log功能
 - 感谢 [**浩彬**](https://github.com/HKLHaoBin) 将此项目部署到 Github，使此项目得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
 - 感谢 [**ranhengzhang**](https://github.com/ranhengzhang) 重构了本项目
+- 感谢 [Trae](https://www.trae.ai/)、[Github Copilot](https://github.com/features/copilot) 和 [Cursor](https://www.cursor.com/) 共同完成的 GUI 版本
 
 ### 特别鸣谢
 
 <div align="center">
-<img src="https://github.com/deepseek-ai/DeepSeek-V2/blob/main/figures/logo.svg?raw=true" width="60%" alt="DeepSeek" />
+<a href="https://www.deepseek.com/" target="_blank">
+    <img src="https://github.com/deepseek-ai/DeepSeek-V2/blob/main/figures/logo.svg?raw=true" width="60%" alt="DeepSeek" />
+</a>
 
-   感谢 [**DeepSeek**](https://www.deepseek.com/) 为此项目提供的大力支持<br>本项目的核心实现由 [**DeepSeek**](https://www.deepseek.com/) 生成
+   感谢 [**DeepSeek**](https://www.deepseek.com/) 为此项目提供的大力支持<br>本项目的初始版本由 [**DeepSeek**](https://www.deepseek.com/) 生成
 
 </div>
 
