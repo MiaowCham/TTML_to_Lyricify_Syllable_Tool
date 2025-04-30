@@ -1,6 +1,8 @@
 # TTML to Lyricify Syllable Tool
 [![MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/blob/main/LICENSE)
 [![Static Badge](https://img.shields.io/badge/Languages-Python-blue.svg)](https://github.com/search?q=repo%3AMiaowCham%2FTTML_to_Lyricify_Syllable_Tool++language%3APython&type=code)
+[![Github Release](https://img.shields.io/github/v/release/MiaowCham/TTML_to_Lyricify_Syllable_Tool)](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/releases)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/MiaowCham/TTML_to_Lyricify_Syllable_Tool/.github/workflows/build.yml)](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/actions/workflows/build.yml)
 
 >[!note]
 >包含用户图形界面的工具现已推出！
