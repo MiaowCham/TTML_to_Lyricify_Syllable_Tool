@@ -12,6 +12,14 @@ from xml.dom.minidom import Document, Element
 
 from pip import main as pip_main
 
+# 确保requests库已安装
+try:
+    import requests
+except ImportError:
+    print("正在安装requests...")
+    pip_main(['install', 'requests'])
+    import requests
+
 # 确保必要的库已安装
 try:
     import loguru
@@ -62,12 +70,13 @@ def get_app_path():
 
 # 日志文件夹路径
 log_dir = os.path.join(get_app_path(), 'log')
-os.makedirs(log_dir, exist_ok=True)  # 确保日志文件夹存在
 
 # 设置日志记录
 def setup_logger(enabled=False):
     if enabled:
         try:
+            # 确保日志文件夹存在（仅在启用日志时创建）
+            os.makedirs(log_dir, exist_ok=True)
             # 移除所有现有的处理器
             logger.remove()
             # 添加新的文件处理器
@@ -379,7 +388,10 @@ class TTMLToLyricifySyllableApp:
         self.paste_btn.pack(side=tk.LEFT, padx=(0, 5))
         
         self.import_btn = ttk.Button(left_buttons_frame, text="导入", command=self.import_file)
-        self.import_btn.pack(side=tk.LEFT)
+        self.import_btn.pack(side=tk.LEFT, padx=(0, 5))
+        
+        self.amll_search_btn = ttk.Button(left_buttons_frame, text="从 AMLL DB 搜索", command=self.open_amll_search)
+        self.amll_search_btn.pack(side=tk.LEFT)
         
         # 右侧按钮
         right_buttons_frame = ttk.Frame(bottom_frame)
@@ -585,6 +597,228 @@ class TTMLToLyricifySyllableApp:
         # 更新状态消息
         self.status_label.config(text=f"提示: {message}")
         logger.info(f"状态更新: {message}")
+        
+    def open_amll_search(self):
+        # 打开AMLL DB搜索窗口
+        logger.info("打开 AMLL DB 搜索工具")
+        search_window = AMLLSearchWindow(self.root, self)
+        search_window.grab_set()  # 模态窗口
+
+# AMLL DB搜索窗口类
+class AMLLSearchWindow(tk.Toplevel):
+    def __init__(self, parent, main_app):
+        super().__init__(parent)
+        self.title("从 AMLL DB 搜索")
+        self.geometry("500x300")
+        self.configure(bg="#333333")
+        self.resizable(False, False)  # 设置为固定大小窗口
+        # 不再需要最小尺寸设置，因为窗口大小已固定
+        
+        # 保存主应用引用
+        self.main_app = main_app
+        
+        # 搜索结果
+        self.search_result = None
+        
+        # 创建界面
+        self.create_widgets()
+        
+        # 居中显示
+        self.center_window()
+        
+        logger.debug("AMLL DB 搜索窗口已初始化")
+        
+    def center_window(self):
+        # 窗口居中显示
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f"{width}x{height}+{x}+{y}")
+        
+    def create_widgets(self):
+        # 创建主框架
+        main_frame = ttk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # 左右分割
+        left_frame = ttk.Frame(main_frame)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False, padx=(0, 5))
+        
+        right_frame = ttk.Frame(main_frame)
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        
+        # 左侧 - 平台选择
+        ttk.Label(left_frame, text="平台").pack(anchor=tk.W, pady=(0, 5))
+        
+        # 平台下拉框
+        self.platform_var = tk.StringVar(value="网易云")
+        platform_frame = ttk.Frame(left_frame)
+        platform_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        self.platform_combobox = ttk.Combobox(platform_frame, textvariable=self.platform_var, state="readonly")
+        self.platform_combobox["values"] = ("网易云", "QQ音乐", "Apple Music", "Spotify")
+        self.platform_combobox.pack(fill=tk.X)
+        
+        # 音乐ID输入
+        ttk.Label(left_frame, text="音乐ID").pack(anchor=tk.W, pady=(0, 5))
+        
+        self.music_id_entry = ttk.Entry(left_frame)
+        self.music_id_entry.pack(fill=tk.X, pady=(0, 10))
+        
+        # 状态显示 - 设置固定高度和宽度，防止长文本影响布局
+        status_frame = ttk.Frame(left_frame, height=60, width=200)
+        status_frame.pack(fill=tk.X, anchor=tk.W, pady=(10, 0))
+        status_frame.pack_propagate(False)  # 防止子组件改变框架大小
+        
+        self.status_label = ttk.Label(status_frame, text="", wraplength=180)  # 设置更小的文本宽度确保换行
+        self.status_label.pack(anchor=tk.W, fill=tk.BOTH, expand=True)
+        
+        # 右侧 - 搜索结果预览（设置为310*190像素）
+        ttk.Label(right_frame, text="搜索结果预览").pack(anchor=tk.W, pady=(0, 5))
+        
+        # 创建一个框架来控制文本框的大小
+        result_frame = ttk.Frame(right_frame, width=310, height=190)
+        result_frame.pack(fill=tk.BOTH, expand=True)
+        result_frame.pack_propagate(False)  # 防止子组件改变框架大小
+        
+        self.result_text = tk.Text(result_frame, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED)
+        self.result_text.pack(fill=tk.BOTH, expand=True)
+        
+        # 底部按钮框架 - 增加高度
+        bottom_frame = ttk.Frame(self, height=40)
+        bottom_frame.pack(fill=tk.X, padx=10, pady=10)
+        bottom_frame.pack_propagate(False)  # 防止子组件改变框架大小
+        
+        # 左侧按钮
+        left_buttons_frame = ttk.Frame(bottom_frame)
+        left_buttons_frame.pack(side=tk.LEFT)
+        
+        self.cancel_btn = ttk.Button(left_buttons_frame, text="取消", command=self.destroy)
+        self.cancel_btn.pack(side=tk.LEFT)
+        
+        # 右侧按钮
+        right_buttons_frame = ttk.Frame(bottom_frame)
+        right_buttons_frame.pack(side=tk.RIGHT)
+        
+        self.search_btn = ttk.Button(right_buttons_frame, text="搜索", command=self.search)
+        self.search_btn.pack(side=tk.RIGHT)
+        
+        self.copy_btn = ttk.Button(right_buttons_frame, text="复制", command=self.copy_result, state=tk.DISABLED)
+        self.copy_btn.pack(side=tk.RIGHT, padx=(0, 5))
+        
+        self.import_btn = ttk.Button(right_buttons_frame, text="导入", command=self.import_result, state=tk.DISABLED)
+        self.import_btn.pack(side=tk.RIGHT, padx=(0, 5))
+    
+    def set_status(self, message):
+        # 更新状态消息
+        self.status_label.config(text=message)
+        logger.info(f"AMLL搜索状态更新: {message}")
+    
+    def search(self):
+        # 获取平台和音乐ID
+        platform = self.platform_var.get()
+        music_id = self.music_id_entry.get().strip()
+        
+        # 验证输入
+        if not music_id:
+            self.set_status("请输入音乐ID")
+            messagebox.showinfo("提示", "请输入音乐ID")
+            return
+        
+        # 平台代码映射
+        platform_code = {
+            "网易云": "ncm",
+            "QQ音乐": "qq",
+            "Apple Music": "am",
+            "Spotify": "spotify"
+        }.get(platform)
+        
+        if not platform_code:
+            self.set_status("不支持的平台")
+            return
+        
+        # 构建URL
+        url = f"https://amll-ttml-db.stevexmh.net/{platform_code}/{music_id}"
+        
+        # 执行搜索
+        try:
+            self.set_status("正在搜索...")
+            self.update_idletasks()
+            
+            # 发送请求
+            response = requests.get(url, timeout=10)
+            
+            # 检查响应
+            if response.status_code == 200:
+                # 保存搜索结果
+                self.search_result = response.text
+                
+                # 更新预览
+                self.result_text.config(state=tk.NORMAL)
+                self.result_text.delete(1.0, tk.END)
+                self.result_text.insert(tk.END, self.search_result)
+                self.result_text.config(state=tk.DISABLED)
+                
+                # 启用按钮
+                self.import_btn.config(state=tk.NORMAL)
+                self.copy_btn.config(state=tk.NORMAL)
+                
+                self.set_status("搜索成功!")
+            else:
+                self.set_status(f"搜索失败: HTTP {response.status_code}")
+                self.result_text.config(state=tk.NORMAL)
+                self.result_text.delete(1.0, tk.END)
+                self.result_text.insert(tk.END, f"搜索失败: HTTP {response.status_code}\n\n可能的原因:\n- 歌曲ID不存在\n- 该平台未收录此歌曲\n- 服务器暂时不可用")
+                self.result_text.config(state=tk.DISABLED)
+                
+                # 禁用按钮
+                self.import_btn.config(state=tk.DISABLED)
+                self.copy_btn.config(state=tk.DISABLED)
+                
+        except Exception as e:
+            error_msg = str(e)
+            # 针对不同平台的特殊错误处理
+            # 统一错误提示信息
+            error_tip = "搜索出错: 请检查网络或尝试使用VPN或代理"
+            self.set_status(error_tip)
+            
+            logger.exception(f"AMLL搜索出错: {str(e)}")
+            
+            self.result_text.config(state=tk.NORMAL)
+            self.result_text.delete(1.0, tk.END)
+            # 统一网络错误提示
+            if "Connection" in error_msg or "远程主机" in error_msg or "timeout" in error_msg or "refused" in error_msg:
+                self.result_text.insert(tk.END, "搜索错误：请检查网络或尝试使用VPN或代理\n\n")
+            else:
+                self.result_text.insert(tk.END, f"搜索出错: {error_msg}\n\n请检查网络或尝试使用VPN或代理\n\n")
+            
+            # 添加完整错误信息
+            self.result_text.insert(tk.END, f"完整错误信息:\n{error_msg}")
+            self.result_text.config(state=tk.DISABLED)
+            
+            # 禁用导入按钮但启用复制按钮（方便复制错误信息）
+            self.import_btn.config(state=tk.DISABLED)
+            self.copy_btn.config(state=tk.NORMAL)
+    
+    def import_result(self):
+        # 导入搜索结果到主窗口
+        if self.search_result:
+            self.main_app.input_text.delete(1.0, tk.END)
+            self.main_app.input_text.insert(tk.END, self.search_result)
+            self.main_app.set_status("已从AMLL DB导入TTML内容")
+            self.destroy()
+    
+    def copy_result(self):
+        # 复制搜索结果到剪贴板
+        if self.search_result:
+            try:
+                pyperclip.copy(self.search_result)
+                self.set_status("已复制到剪贴板")
+            except Exception as e:
+                self.set_status(f"复制失败: {str(e)}")
+                logger.exception(f"复制到剪贴板失败: {str(e)}")
 
 # 主函数
 def main():

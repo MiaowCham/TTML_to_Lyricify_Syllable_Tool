@@ -106,9 +106,6 @@ def build_exe():
     # 设置输出目录
     dist_dir = os.path.join(current_dir, "dist")
     
-    # 确保log目录存在
-    log_dir = os.path.join(current_dir, "log")
-    os.makedirs(log_dir, exist_ok=True)
     
     # 确定主程序文件
     main_script = "TTML_to_Lyricify_Syllable_GUI.py"
@@ -148,7 +145,6 @@ def build_exe():
             "--onefile",
             "--windowed",
             "--name=TTML_to_LYS_Tool",
-            f"--add-data={log_dir}{os.pathsep}log",
         ]
     else:
         # 使用Python模块
@@ -160,7 +156,6 @@ def build_exe():
             "--onefile",
             "--windowed",
             "--name=TTML_to_LYS_Tool",
-            f"--add-data={log_dir}{os.pathsep}log",
         ]
     
     # 添加图标（如果存在）
