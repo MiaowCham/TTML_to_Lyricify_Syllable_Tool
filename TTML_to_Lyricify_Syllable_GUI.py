@@ -10,34 +10,55 @@ from typing import Iterator, AnyStr
 from xml.dom.minicompat import NodeList
 from xml.dom.minidom import Document, Element
 
-from pip import main as pip_main
+# 导入 pip (仅在开发环境使用)
+try:
+    from pip import main as pip_main
+except ImportError:
+    pip_main = None
 
-# 确保requests库已安装
+# 导入必要的库
+# 首先尝试直接导入，如果打包后运行则应该已经包含这些库
+# 其次尝试使用pip安装（仅开发环境）
 try:
     import requests
 except ImportError:
-    print("正在安装requests...")
-    pip_main(['install', 'requests'])
-    import requests
+    if pip_main:
+        print("正在安装requests...")
+        pip_main(['install', 'requests'])
+        import requests
+    else:
+        # 打包环境中出错则显示友好错误
+        messagebox.showerror("错误", "缺少requests库，程序无法正常运行。请重新下载完整版本或联系开发者。")
+        sys.exit(1)
 
-# 确保必要的库已安装
 try:
-    import loguru
-except ImportError:
-    print("正在安装loguru...")
-    pip_main(['install', 'loguru'])
-    import loguru
-
-finally:
     from loguru import logger
+except ImportError:
+    try:
+        import loguru
+    except ImportError:
+        if pip_main:
+            print("正在安装loguru...")
+            pip_main(['install', 'loguru'])
+            import loguru
+            from loguru import logger
+        else:
+            # 打包环境中出错则显示友好错误
+            messagebox.showerror("错误", "缺少loguru库，程序无法正常运行。请重新下载完整版本或联系开发者。")
+            sys.exit(1)
 
 # 确保pyperclip已安装
 try:
     import pyperclip
 except ImportError:
-    print("正在安装pyperclip...")
-    pip_main(['install', 'pyperclip'])
-    import pyperclip
+    if pip_main:
+        print("正在安装pyperclip...")
+        pip_main(['install', 'pyperclip'])
+        import pyperclip
+    else:
+        # 打包环境中出错则显示友好错误
+        messagebox.showerror("错误", "缺少pyperclip库，程序无法正常运行。请重新下载完整版本或联系开发者。")
+        sys.exit(1)
 
 # 尝试导入tkinterdnd2用于拖放功能
 try:
@@ -46,11 +67,17 @@ try:
     HAS_DND = True
 except ImportError:
     try:
-        print("正在安装tkinterdnd2...")
-        pip_main(['install', 'tkinterdnd2'])
-        import tkinterdnd2
-        from tkinterdnd2 import DND_FILES, TkinterDnD
-        HAS_DND = True
+        if pip_main:
+            print("正在安装tkinterdnd2...")
+            pip_main(['install', 'tkinterdnd2'])
+            import tkinterdnd2
+            from tkinterdnd2 import DND_FILES, TkinterDnD
+            HAS_DND = True
+        else:
+            HAS_DND = False
+            print("无法使用tkinterdnd2，拖放功能将不可用")
+            # 定义一个全局变量，以便在类中使用
+            DND_FILES = "*"
     except:
         HAS_DND = False
         print("无法安装tkinterdnd2，拖放功能将不可用")

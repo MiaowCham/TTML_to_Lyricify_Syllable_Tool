@@ -79,24 +79,20 @@ def build_exe():
     except:
         pass  # 如果更新失败，忽略错误
     
-    # 检查PyInstaller
-    need_install = not is_package_installed("pyinstaller")
-    
-    # 如果没有安装，尝试安装
-    if need_install:
-        print("未检测到PyInstaller，准备安装...")
-        success = install_package("pyinstaller")
-        
-        if not success:
-            print("\n自动安装失败。请尝试以下步骤:")
-            print("1. 使用管理员权限打开命令提示符")
-            print(f"2. 运行: {sys.executable} -m pip install --user pyinstaller")
-            print("3. 安装完成后重新运行此脚本")
-            if not os.environ.get('GITHUB_ACTIONS'):  # 只在非GitHub Actions环境中等待用户输入
-                input("\n按Enter键退出...")
-            sys.exit(1)
-    else:
-        print("已检测到PyInstaller")
+    # 检查所有必需的包
+    required_packages = ["pyinstaller", "requests", "loguru", "pyperclip"]
+    for package in required_packages:
+        if not is_package_installed(package):
+            print(f"未检测到{package}，准备安装...")
+            success = install_package(package)
+            if not success and package == "pyinstaller":
+                print("\n自动安装PyInstaller失败。请尝试以下步骤:")
+                print("1. 使用管理员权限打开命令提示符")
+                print(f"2. 运行: {sys.executable} -m pip install --user pyinstaller")
+                print("3. 安装完成后重新运行此脚本")
+                if not os.environ.get('GITHUB_ACTIONS'):  # 只在非GitHub Actions环境中等待用户输入
+                    input("\n按Enter键退出...")
+                sys.exit(1)
     
     # 获取当前脚本所在目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -145,6 +141,10 @@ def build_exe():
             "--onefile",
             "--windowed",
             "--name=TTML_to_LYS_Tool",
+            "--hidden-import=requests",
+            "--hidden-import=loguru",
+            "--hidden-import=pyperclip",
+            "--hidden-import=tkinterdnd2",
         ]
     else:
         # 使用Python模块
@@ -156,6 +156,10 @@ def build_exe():
             "--onefile",
             "--windowed",
             "--name=TTML_to_LYS_Tool",
+            "--hidden-import=requests",
+            "--hidden-import=loguru",
+            "--hidden-import=pyperclip",
+            "--hidden-import=tkinterdnd2",
         ]
     
     # 添加图标（如果存在）
