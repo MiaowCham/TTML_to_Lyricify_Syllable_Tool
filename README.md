@@ -4,6 +4,32 @@
 [![Github Release](https://img.shields.io/github/v/release/MiaowCham/TTML_to_Lyricify_Syllable_Tool)](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/MiaowCham/TTML_to_Lyricify_Syllable_Tool/.github/workflows/build.yml)](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/actions/workflows/build.yml)
 
+>[!note]
+>包含用户图形界面的工具现已推出！
+>[跳转至Release下载](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/releases/)
+
+**一个适用于 TTML (AMLL标准) 文件转 Lyricify Syllable 的小工具**
+
+- Python 3.8+
+- 依赖包：
+  - tkinter
+  - xml.dom.minidom
+  - loguru
+  - pyperclip
+
+TTML (AMLL标准) 是 AMLL 默认使用的歌词文件；Lyricify Syllable 是 Lyricify 使用的歌词文件。他们都是为实现 Apple Music 样式歌词而制作的格式/规范。但很不幸的是：他们并不兼容。~并且使用 AMLL TTML Tool 输出的 Lyricify Syllable 格式及其不规范~。TTML to Lyricify Syllable Tool 就是为了解决这个问题而诞生的。
+>***AMLL TTML Tool 现已去除（~注释掉~）相关导出功能（按键）*** <br>
+>需要将 TTML 转换到别的格式？试试 [TTML TRANSLATER](https://github.com/ranhengzhang/ttml-translater)
+
+现在，一拖、一按，即可完成规范化转换！甚至可以提取翻译并单独输出。
+
+### 使用说明
+   - 直接将待转换的 ttml 文件拖入工具图标或命令行窗口即可完成转换
+   - 默认输出目录为`output`文件夹,具体输出路径可自行修改
+   - 本工具需要 Python 3.x 以上环境（实际仅在3.11和3.12测试）
+
+###### 详细信息请见 [提示词及转换原理](/Prompt_words_&_Conversion_principles.md)
+
 ## TTML to Lyricify Syllable GUI
 基于 `tkinter` 实现的基础 GUI 功能，通过 `PyInstaller` 进行打包构建
 >~终于不用对着黑框框转换了~
@@ -13,16 +39,24 @@
 GUI版本不会主动输出 `.lys` 文件，仅会在勾选日志记录后输出日志信息至 /log 文件夹。您可以点击复制按钮进行手动复制输出结果<br>
 由于转换实现方式较为复杂，在部分情况下（如导入文字过多、转换时）可能会出现性能问题甚至未响应，应属正常现象
 
-### 依赖说明
+## [TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)
+**TTML to Lys on Github** 主要用于实现从 GitHub Issue 中获取歌词内容，将 ttml 格式歌词转换为 lys，然后将处理后的结果以评论的形式附加到该 Issue 中。该工具通过 Python 实现，依赖于 GitHub API 和正则表达式技术，能够高效、智能地完成歌词内容的清理工作。
 
-- Python 3.8+
-- 依赖包：
-  - tkinter
-  - xml.dom.minidom
-  - loguru
-  - pyperclip
+### > [点击这里使用 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys/issues/new/choose) <
 
-### 注意事项
+## 示例
+假设待处理内容为`test.ttml`：
+```
+<span begin="00:03.694" end="00:04.078">English </span><span begin="00:04.078" end="00:04.410">version </span><span begin="00:04.410" end="00:04.799">one</span>
+<span begin="00:03.694" end="00:04.078">English</span> <span begin="00:04.078" end="00:04.410">version</span> <span begin="00:04.410" end="00:04.799">one</span>
+```
+
+脚本处理后会生成以下结果并输出文件`test.lys`到`output`文件夹：
+```
+[4]English (3694,384)version (4078,332)one(4410,389)
+```
+
+## 注意事项
  仅针对 AMLL TTML Tool 输出的 TTML 文件进行适配，不保证其他来源的 TTML 文件转换可用性和准确性
 
 ## 鸣谢
