@@ -10,8 +10,12 @@
 
 **一个适用于 TTML (AMLL标准) 文件转 Lyricify Syllable 的小工具**
 
-开发者是[**喵锵**](https://github.com/MiaowCham)，初始版本由 DeepSeek 构建。<br>
-[**浩彬**](https://github.com/HKLHaoBin)将工具进行了修改，得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
+- Python 3.8+
+- 依赖包：
+  - tkinter
+  - xml.dom.minidom
+  - loguru
+  - pyperclip
 
 TTML (AMLL标准) 是 AMLL 默认使用的歌词文件；Lyricify Syllable 是 Lyricify 使用的歌词文件。他们都是为实现 Apple Music 样式歌词而制作的格式/规范。但很不幸的是：他们并不兼容。~并且使用 AMLL TTML Tool 输出的 Lyricify Syllable 格式及其不规范~。TTML to Lyricify Syllable Tool 就是为了解决这个问题而诞生的。
 >***AMLL TTML Tool 现已去除（~注释掉~）相关导出功能（按键）*** <br>
@@ -53,7 +57,7 @@ GUI版本不会主动输出 `.lys` 文件，仅会在勾选日志记录后输出
 ```
 
 ## 注意事项
- 输入文本格式应与工具的处理逻辑相匹配，以确保修正效果最佳。
+ 仅针对 AMLL TTML Tool 输出的 TTML 文件进行适配，不保证其他来源的 TTML 文件转换可用性和准确性
 
 ## 鸣谢
 - 感谢 [**FanSh**](https://github.com/fred913/) 修改了部分不合理的内容并优化了log功能
