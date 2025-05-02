@@ -5,10 +5,10 @@ on:
     tags:
       - 'v*'
     branches:
-      - GUI
+      - main
   pull_request:
     branches:
-      - GUI
+      - main
 
 jobs:
   build:
