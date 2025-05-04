@@ -9,6 +9,8 @@ import string
 from typing import Iterator, AnyStr
 from xml.dom.minicompat import NodeList
 from xml.dom.minidom import Document, Element
+import threading
+from queue import Queue
 
 # 导入 pip (仅在开发环境使用)
 try:
@@ -317,7 +319,15 @@ class TTMLToLyricifySyllableApp:
         self.root.title("TTML转Lyricify Syllable工具")
         self.root.geometry("800x600")
         self.root.configure(bg="#333333")
-        self.root.minsize(600, 400)  # 设置最小窗口大小
+        
+        # 初始化后设置实际窗口大小为最小窗口大小
+        self.root.update_idletasks()  # 确保窗口已经绘制
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        self.root.minsize(width, height)  # 设置最小窗口大小为当前实际大小
+        
+        # 设置线程锁，用于防止多线程操作时的竞态条件
+        self.thread_lock = threading.Lock()
         
         # 设置图标（如果有）
         try:
@@ -327,8 +337,9 @@ class TTMLToLyricifySyllableApp:
         except:
             pass
         
-        # 日志启用状态
+        # 日志启用状态和自动换行状态
         self.log_enabled = tk.BooleanVar(value=False)
+        self.word_wrap_enabled = tk.BooleanVar(value=False)
         
         # 设置样式
         self.setup_styles()
@@ -345,8 +356,11 @@ class TTMLToLyricifySyllableApp:
         # 显示欢迎信息
         self.set_status("欢迎使用TTML转Lyricify Syllable工具")
         
-        # 绑定日志复选框的变量跟踪
+        # 绑定复选框的变量跟踪
         self.log_enabled.trace_add("write", self.on_log_enabled_change)
+        
+        # 初始化文本框换行状态
+        self.toggle_word_wrap()
         
     def on_log_enabled_change(self, *args):
         """当日志启用状态改变时调用"""
@@ -360,6 +374,13 @@ class TTMLToLyricifySyllableApp:
             # 移除所有处理器
             logger.remove()
             self.set_status("日志记录已禁用")
+    
+    def toggle_word_wrap(self):
+        """切换文本框的自动换行状态"""
+        wrap_mode = tk.WORD if self.word_wrap_enabled.get() else tk.NONE
+        self.input_text.configure(wrap=wrap_mode)
+        self.output_text.configure(wrap=wrap_mode)
+        self.trans_text.configure(wrap=wrap_mode)
         
     def setup_styles(self):
         # 设置ttk样式
@@ -440,8 +461,16 @@ class TTMLToLyricifySyllableApp:
         self.status_label = ttk.Label(status_frame, text="")
         self.status_label.pack(side=tk.LEFT)
         
+        # 复选框框架
+        checkbox_frame = ttk.Frame(status_frame)
+        checkbox_frame.pack(side=tk.RIGHT)
+        
+        # 自动换行复选框
+        self.word_wrap_checkbox = ttk.Checkbutton(checkbox_frame, text="自动换行", variable=self.word_wrap_enabled, command=self.toggle_word_wrap)
+        self.word_wrap_checkbox.pack(side=tk.RIGHT, padx=(0, 10))
+        
         # 日志复选框
-        self.log_checkbox = ttk.Checkbutton(status_frame, text="启用日志记录", variable=self.log_enabled)
+        self.log_checkbox = ttk.Checkbutton(checkbox_frame, text="启用日志记录", variable=self.log_enabled)
         self.log_checkbox.pack(side=tk.RIGHT)
     
     def setup_drag_drop(self):
@@ -471,16 +500,19 @@ class TTMLToLyricifySyllableApp:
             
             if os.path.exists(file_path) and os.path.isfile(file_path):
                 try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                except UnicodeDecodeError:
-                    # 尝试其他编码
-                    with open(file_path, 'r', encoding='gbk') as f:
-                        content = f.read()
-                        
-                self.input_text.delete(1.0, tk.END)
-                self.input_text.insert(tk.END, content)
-                self.set_status(f"文件导入成功: {file_path}")
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                    except UnicodeDecodeError:
+                        # 尝试其他编码
+                        with open(file_path, 'r', encoding='gbk') as f:
+                            content = f.read()
+                            
+                    self.update_input_text_threaded(content)
+                    self.set_status(f"文件读取成功: {file_path}")
+                except Exception as e:
+                    self.set_status(f"文件读取失败: {str(e)}")
+                    logger.exception(f"文件读取失败: {str(e)}")
             else:
                 self.set_status("文件不存在或不是有效文件")
         except Exception as e:
@@ -497,10 +529,8 @@ class TTMLToLyricifySyllableApp:
         try:
             clipboard_content = pyperclip.paste()
             if clipboard_content:
-                self.input_text.delete(1.0, tk.END)
-                self.input_text.insert(tk.END, clipboard_content)
-                self.set_status("剪切板读取成功")
-                logger.info("成功从剪贴板粘贴内容")
+                self.update_input_text_threaded(clipboard_content)
+                logger.info("成功从剪贴板获取内容")
             else:
                 self.set_status("剪切板为空")
                 logger.warning("剪贴板为空")
@@ -526,10 +556,8 @@ class TTMLToLyricifySyllableApp:
                     with open(file_path, 'r', encoding='gbk') as f:
                         content = f.read()
                 
-                self.input_text.delete(1.0, tk.END)
-                self.input_text.insert(tk.END, content)
-                self.set_status("导入成功")
-                logger.info(f"成功导入文件: {file_path}")
+                self.update_input_text_threaded(content)
+                logger.info(f"成功读取文件: {file_path}")
             except Exception as e:
                 self.set_status("导入失败")
                 logger.exception(f"文件导入失败: {file_path}")
@@ -576,49 +604,88 @@ class TTMLToLyricifySyllableApp:
             messagebox.showinfo("提示", "请先输入TTML内容")
             return
         
-        # 执行转换
-        try:
-            # 显示转换中状态
-            self.set_status("正在转换...")
-            self.root.update()
-            
-            success, lyric_text, trans_text = ttml_to_lyricify_syllable_text(ttml_content)
-            
-            if success:
-                # 更新输出文本
-                self.output_text.config(state=tk.NORMAL)
-                self.output_text.delete(1.0, tk.END)
-                self.output_text.insert(tk.END, lyric_text)
-                self.output_text.config(state=tk.DISABLED)
+        # 禁用转换按钮，防止重复点击
+        self.convert_btn.config(state=tk.DISABLED)
+        
+        # 显示转换中状态
+        self.set_status("正在转换...")
+        self.root.update()
+        
+        # 创建一个队列用于线程间通信
+        result_queue = Queue()
+        
+        # 定义转换线程的工作函数
+        def conversion_worker():
+            try:
+                success, lyric_text, trans_text = ttml_to_lyricify_syllable_text(ttml_content)
+                # 将结果放入队列
+                result_queue.put((success, lyric_text, trans_text))
+            except Exception as e:
+                # 发生异常时，将异常信息放入队列
+                result_queue.put((False, None, None, str(e)))
+        
+        # 定义处理转换结果的函数
+        def process_result():
+            # 检查队列中是否有结果
+            if not result_queue.empty():
+                # 获取结果
+                result = result_queue.get()
                 
-                # 更新翻译文本
-                self.trans_text.config(state=tk.NORMAL)
-                self.trans_text.delete(1.0, tk.END)
-                if trans_text:
-                    self.trans_text.insert(tk.END, trans_text)
-                self.trans_text.config(state=tk.DISABLED)
+                # 检查是否有异常
+                if len(result) == 4:
+                    success, _, _, error_msg = result
+                    self.set_status("转换失败，请检查TTML格式是否正确")
+                    logger.exception(f"转换失败: {error_msg}")
+                    messagebox.showerror("转换错误", f"转换过程中发生错误: {error_msg}")
+                    
+                    # 显示详细错误信息
+                    self.output_text.config(state=tk.NORMAL)
+                    self.output_text.delete(1.0, tk.END)
+                    self.output_text.insert(tk.END, f"转换错误: {error_msg}\n\n请检查TTML格式是否正确")
+                    self.output_text.config(state=tk.DISABLED)
+                else:
+                    success, lyric_text, trans_text = result
+                    
+                    if success:
+                        # 更新输出文本
+                        self.output_text.config(state=tk.NORMAL)
+                        self.output_text.delete(1.0, tk.END)
+                        self.output_text.insert(tk.END, lyric_text)
+                        self.output_text.config(state=tk.DISABLED)
+                        
+                        # 更新翻译文本
+                        self.trans_text.config(state=tk.NORMAL)
+                        self.trans_text.delete(1.0, tk.END)
+                        if trans_text:
+                            self.trans_text.insert(tk.END, trans_text)
+                        self.trans_text.config(state=tk.DISABLED)
+                        
+                        # 更新按钮状态
+                        self.copy_lyrics_btn.config(state=tk.NORMAL if lyric_text else tk.DISABLED)
+                        self.copy_trans_btn.config(state=tk.NORMAL if trans_text else tk.DISABLED)
+                        
+                        # 更新状态
+                        status_msg = "转换成功"
+                        if TTMLLine.have_pair > 0:
+                            status_msg += f"，移除了 {TTMLLine.have_pair} 处括号"
+                        self.set_status(status_msg)
+                    else:
+                        self.set_status("转换失败，请检查TTML格式是否正确")
                 
-                # 更新按钮状态
-                self.copy_lyrics_btn.config(state=tk.NORMAL if lyric_text else tk.DISABLED)
-                self.copy_trans_btn.config(state=tk.NORMAL if trans_text else tk.DISABLED)
-                
-                # 更新状态
-                status_msg = "转换成功"
-                if TTMLLine.have_pair > 0:
-                    status_msg += f"，移除了 {TTMLLine.have_pair} 处括号"
-                self.set_status(status_msg)
-            else:
-                self.set_status("转换失败，请检查TTML格式是否正确")
-        except Exception as e:
-            self.set_status("转换失败，请检查TTML格式是否正确")
-            logger.exception(f"转换失败: {str(e)}")
-            messagebox.showerror("转换错误", f"转换过程中发生错误: {str(e)}")
+                # 重新启用转换按钮
+                self.convert_btn.config(state=tk.NORMAL)
+                return
             
-            # 显示详细错误信息
-            self.output_text.config(state=tk.NORMAL)
-            self.output_text.delete(1.0, tk.END)
-            self.output_text.insert(tk.END, f"转换错误: {str(e)}\n\n请检查TTML格式是否正确")
-            self.output_text.config(state=tk.DISABLED)
+            # 如果队列为空，继续等待结果
+            self.root.after(100, process_result)
+        
+        # 启动转换线程
+        conversion_thread = threading.Thread(target=conversion_worker)
+        conversion_thread.daemon = True  # 设置为守护线程，随主线程退出而退出
+        conversion_thread.start()
+        
+        # 开始检查结果
+        self.root.after(100, process_result)
     
     def set_status(self, message):
         # 更新状态消息
@@ -631,12 +698,74 @@ class TTMLToLyricifySyllableApp:
         search_window = AMLLSearchWindow(self.root, self)
         search_window.grab_set()  # 模态窗口
 
+    def update_input_text_threaded(self, content):
+        """在独立线程中更新输入文本框的内容"""
+        # 禁用相关按钮
+        self.paste_btn.config(state=tk.DISABLED)
+        self.import_btn.config(state=tk.DISABLED)
+        self.convert_btn.config(state=tk.DISABLED)
+        
+        # 显示加载中状态
+        self.set_status("正在加载文本...")
+        self.root.update_idletasks()
+        
+        # 创建一个队列用于线程间通信
+        content_queue = Queue()
+        content_queue.put(content)
+        
+        # 定义更新文本的工作函数
+        def update_worker():
+            try:
+                # 从队列获取内容
+                text_content = content_queue.get()
+                
+                # 使用after方法在主线程中安全地更新UI
+                self.root.after(0, lambda: self._update_text_ui(text_content))
+            except Exception as e:
+                logger.exception(f"文本更新失败: {str(e)}")
+                # 使用after方法在主线程中安全地显示错误
+                self.root.after(0, lambda: self._show_update_error(str(e)))
+        
+        # 启动更新线程
+        update_thread = threading.Thread(target=update_worker)
+        update_thread.daemon = True
+        update_thread.start()
+    
+    def _update_text_ui(self, content):
+        """在主线程中实际更新UI"""
+        try:
+            # 更新文本框
+            self.input_text.delete(1.0, tk.END)
+            self.input_text.insert(tk.END, content)
+            
+            # 重新启用按钮
+            self.paste_btn.config(state=tk.NORMAL)
+            self.import_btn.config(state=tk.NORMAL)
+            self.convert_btn.config(state=tk.NORMAL)
+            
+            # 更新状态
+            self.set_status("内容已加载")
+        except Exception as e:
+            logger.exception(f"UI更新失败: {str(e)}")
+            self._show_update_error(str(e))
+    
+    def _show_update_error(self, error_msg):
+        """显示更新错误"""
+        # 重新启用按钮
+        self.paste_btn.config(state=tk.NORMAL)
+        self.import_btn.config(state=tk.NORMAL)
+        self.convert_btn.config(state=tk.NORMAL)
+        
+        # 更新状态
+        self.set_status("内容加载失败")
+        messagebox.showerror("更新错误", f"无法更新文本内容: {error_msg}")
+
 # AMLL DB搜索窗口类
 class AMLLSearchWindow(tk.Toplevel):
     def __init__(self, parent, main_app):
         super().__init__(parent)
         self.title("从 AMLL DB 搜索")
-        self.geometry("500x300")
+        self.geometry("500x320")
         self.configure(bg="#333333")
         self.resizable(False, False)  # 设置为固定大小窗口
         # 不再需要最小尺寸设置，因为窗口大小已固定
@@ -647,8 +776,14 @@ class AMLLSearchWindow(tk.Toplevel):
         # 搜索结果
         self.search_result = None
         
+        # 获取主窗口的自动换行状态
+        self.word_wrap_enabled = main_app.word_wrap_enabled
+        
         # 创建界面
         self.create_widgets()
+        
+        # 同步主窗口的自动换行状态
+        self.word_wrap_enabled.trace_add("write", lambda *args: self.toggle_word_wrap())
         
         # 居中显示
         self.center_window()
@@ -710,8 +845,13 @@ class AMLLSearchWindow(tk.Toplevel):
         result_frame.pack(fill=tk.BOTH, expand=True)
         result_frame.pack_propagate(False)  # 防止子组件改变框架大小
         
-        self.result_text = tk.Text(result_frame, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED)
+        # 创建文本框
+        self.result_text = tk.Text(result_frame, wrap=tk.NONE, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED)
         self.result_text.pack(fill=tk.BOTH, expand=True)
+        
+        # 自动换行复选框
+        self.word_wrap_checkbox = ttk.Checkbutton(right_frame, text="自动换行", variable=self.word_wrap_enabled)
+        self.word_wrap_checkbox.pack(anchor=tk.W, pady=(5, 0))
         
         # 底部按钮框架 - 增加高度
         bottom_frame = ttk.Frame(self, height=40)
@@ -737,6 +877,11 @@ class AMLLSearchWindow(tk.Toplevel):
         
         self.import_btn = ttk.Button(right_buttons_frame, text="导入", command=self.import_result, state=tk.DISABLED)
         self.import_btn.pack(side=tk.RIGHT, padx=(0, 5))
+    
+    def toggle_word_wrap(self):
+        """切换文本框的自动换行状态"""
+        wrap_mode = tk.WORD if self.word_wrap_enabled.get() else tk.NONE
+        self.result_text.configure(wrap=wrap_mode)
     
     def set_status(self, message):
         # 更新状态消息
@@ -769,71 +914,109 @@ class AMLLSearchWindow(tk.Toplevel):
         # 构建URL
         url = f"https://amll-ttml-db.stevexmh.net/{platform_code}/{music_id}"
         
-        # 执行搜索
-        try:
-            self.set_status("正在搜索...")
-            self.update_idletasks()
-            
-            # 发送请求
-            response = requests.get(url, timeout=10)
-            
-            # 检查响应
-            if response.status_code == 200:
-                # 保存搜索结果
-                self.search_result = response.text
+        # 禁用搜索按钮，防止重复点击
+        self.search_btn.config(state=tk.DISABLED)
+        
+        # 显示搜索中状态
+        self.set_status("正在搜索...")
+        self.update_idletasks()
+        
+        # 创建一个队列用于线程间通信
+        result_queue = Queue()
+        
+        # 定义搜索线程的工作函数
+        def search_worker():
+            try:
+                # 发送请求
+                response = requests.get(url, timeout=10)
                 
-                # 更新预览
-                self.result_text.config(state=tk.NORMAL)
-                self.result_text.delete(1.0, tk.END)
-                self.result_text.insert(tk.END, self.search_result)
-                self.result_text.config(state=tk.DISABLED)
+                # 将结果放入队列
+                result_queue.put(("success", response))
+            except Exception as e:
+                # 发生异常时，将异常信息放入队列
+                result_queue.put(("error", str(e)))
+        
+        # 定义处理搜索结果的函数
+        def process_result():
+            # 检查队列中是否有结果
+            if not result_queue.empty():
+                # 获取结果
+                result_type, result_data = result_queue.get()
                 
-                # 启用按钮
-                self.import_btn.config(state=tk.NORMAL)
-                self.copy_btn.config(state=tk.NORMAL)
+                if result_type == "success":
+                    # 搜索成功
+                    response = result_data
+                    
+                    # 检查响应
+                    if response.status_code == 200:
+                        # 保存搜索结果
+                        self.search_result = response.text
+                        
+                        # 更新预览
+                        self.result_text.config(state=tk.NORMAL)
+                        self.result_text.delete(1.0, tk.END)
+                        self.result_text.insert(tk.END, self.search_result)
+                        self.result_text.config(state=tk.DISABLED)
+                        
+                        # 启用按钮
+                        self.import_btn.config(state=tk.NORMAL)
+                        self.copy_btn.config(state=tk.NORMAL)
+                        
+                        self.set_status("搜索成功!")
+                    else:
+                        self.set_status(f"搜索失败: HTTP {response.status_code}")
+                        self.result_text.config(state=tk.NORMAL)
+                        self.result_text.delete(1.0, tk.END)
+                        self.result_text.insert(tk.END, f"搜索失败: HTTP {response.status_code}\n\n可能的原因:\n- 歌曲ID不存在\n- 该平台未收录此歌曲\n- 服务器暂时不可用")
+                        self.result_text.config(state=tk.DISABLED)
+                        
+                        # 禁用按钮
+                        self.import_btn.config(state=tk.DISABLED)
+                        self.copy_btn.config(state=tk.DISABLED)
+                else:
+                    # 发生异常
+                    error_msg = result_data
+                    # 统一错误提示信息
+                    error_tip = "搜索出错: 请检查网络或尝试使用VPN或代理"
+                    self.set_status(error_tip)
+                    
+                    logger.exception(f"AMLL搜索出错: {error_msg}")
+                    
+                    self.result_text.config(state=tk.NORMAL)
+                    self.result_text.delete(1.0, tk.END)
+                    # 统一网络错误提示
+                    if "Connection" in error_msg or "远程主机" in error_msg or "timeout" in error_msg or "refused" in error_msg:
+                        self.result_text.insert(tk.END, "搜索错误：请检查网络或尝试使用VPN或代理\n\n")
+                    else:
+                        self.result_text.insert(tk.END, f"搜索出错: {error_msg}\n\n请检查网络或尝试使用VPN或代理\n\n")
+                    
+                    # 添加完整错误信息
+                    self.result_text.insert(tk.END, f"完整错误信息:\n{error_msg}")
+                    self.result_text.config(state=tk.DISABLED)
+                    
+                    # 禁用导入按钮但启用复制按钮（方便复制错误信息）
+                    self.import_btn.config(state=tk.DISABLED)
+                    self.copy_btn.config(state=tk.NORMAL)
                 
-                self.set_status("搜索成功!")
-            else:
-                self.set_status(f"搜索失败: HTTP {response.status_code}")
-                self.result_text.config(state=tk.NORMAL)
-                self.result_text.delete(1.0, tk.END)
-                self.result_text.insert(tk.END, f"搜索失败: HTTP {response.status_code}\n\n可能的原因:\n- 歌曲ID不存在\n- 该平台未收录此歌曲\n- 服务器暂时不可用")
-                self.result_text.config(state=tk.DISABLED)
-                
-                # 禁用按钮
-                self.import_btn.config(state=tk.DISABLED)
-                self.copy_btn.config(state=tk.DISABLED)
-                
-        except Exception as e:
-            error_msg = str(e)
-            # 针对不同平台的特殊错误处理
-            # 统一错误提示信息
-            error_tip = "搜索出错: 请检查网络或尝试使用VPN或代理"
-            self.set_status(error_tip)
+                # 重新启用搜索按钮
+                self.search_btn.config(state=tk.NORMAL)
+                return
             
-            logger.exception(f"AMLL搜索出错: {str(e)}")
-            
-            self.result_text.config(state=tk.NORMAL)
-            self.result_text.delete(1.0, tk.END)
-            # 统一网络错误提示
-            if "Connection" in error_msg or "远程主机" in error_msg or "timeout" in error_msg or "refused" in error_msg:
-                self.result_text.insert(tk.END, "搜索错误：请检查网络或尝试使用VPN或代理\n\n")
-            else:
-                self.result_text.insert(tk.END, f"搜索出错: {error_msg}\n\n请检查网络或尝试使用VPN或代理\n\n")
-            
-            # 添加完整错误信息
-            self.result_text.insert(tk.END, f"完整错误信息:\n{error_msg}")
-            self.result_text.config(state=tk.DISABLED)
-            
-            # 禁用导入按钮但启用复制按钮（方便复制错误信息）
-            self.import_btn.config(state=tk.DISABLED)
-            self.copy_btn.config(state=tk.NORMAL)
+            # 如果队列为空，继续等待结果
+            self.after(100, process_result)
+        
+        # 启动搜索线程
+        search_thread = threading.Thread(target=search_worker)
+        search_thread.daemon = True  # 设置为守护线程，随主线程退出而退出
+        search_thread.start()
+        
+        # 开始检查结果
+        self.after(100, process_result)
     
     def import_result(self):
         # 导入搜索结果到主窗口
         if self.search_result:
-            self.main_app.input_text.delete(1.0, tk.END)
-            self.main_app.input_text.insert(tk.END, self.search_result)
+            self.main_app.update_input_text_threaded(self.search_result)
             self.main_app.set_status("已从AMLL DB导入TTML内容")
             self.destroy()
     
@@ -865,7 +1048,7 @@ def main():
 
 if __name__ == "__main__":
     # 设置版本信息
-    VERSION = "v1.0.0"
+    VERSION = "v1.2.0"
     print(f"TTML转Lyricify Syllable工具 {VERSION} - GUI版本")
     print("基于 TTML_to_Lyricify_Syllable_Tool 开发")
     print("项目地址：https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool")
