@@ -52,9 +52,9 @@ class TTMLTime:
         # 获取下一个匹配
         iterator: Iterator[Match[str]] = iter(matches)  # 将匹配对象转换为迭代器
 
-        self.__minute:int = int(next(iterator).group())
-        self.__second:int = int(next(iterator).group())
-        self.__micros:int = int(next(iterator).group())
+        self.__minute: int = int(next(iterator).group())
+        self.__second: int = int(next(iterator).group())
+        self.__micros: int = int(next(iterator).group())
 
     def __str__(self) -> str:
         return f'{self.__minute:02}:{self.__second:02}.{self.__micros:03}'
@@ -71,6 +71,7 @@ class TTMLTime:
     def __sub__(self, other) -> int:
         return abs(int(self) - int(other))
 
+
 class TTMLSyl:
     def __init__(self, element: Element):
         self.__element: Element = element
@@ -85,6 +86,10 @@ class TTMLSyl:
     def get_begin(self) -> TTMLTime:
         return self.__begin
 
+    def get_end(self) -> TTMLTime:
+        return self.__end
+
+
 class TTMLLine:
     have_ts: bool = False
     have_duet: bool = False
@@ -96,19 +101,19 @@ class TTMLLine:
 
     def __init__(self, element: Element, is_bg: bool = False):
         self.__element: Element = element
-        self.__orig_line: list[TTMLSyl|str] = []
-        self.__ts_line: str|None = None
-        self.__bg_line: TTMLLine|None = None
+        self.__orig_line: list[TTMLSyl | str] = []
+        self.__ts_line: str | None = None
+        self.__bg_line: TTMLLine | None = None
         self.__is_bg: bool = is_bg
 
         TTMLLine.have_bg |= is_bg
 
         # 获取传入元素的 agent 属性
         agent: string = element.getAttribute("ttm:agent")
-        self.__is_duet:bool = bool(agent and agent != 'v1')
+        self.__is_duet: bool = bool(agent and agent != 'v1')
 
         # 获取 <p> 元素的所有子节点，包括文本节点
-        child_elements:list[Element] = element.childNodes  # iter() 会返回所有子元素和文本节点
+        child_elements: list[Element] = element.childNodes  # iter() 会返回所有子元素和文本节点
 
         # 遍历所有子元素
         for child in child_elements:
@@ -119,7 +124,7 @@ class TTMLLine:
                     self.__orig_line.append(child.nodeValue)
             else:
                 # 获取 <span> 中的属性
-                role:str = child.getAttribute("ttm:role")
+                role: str = child.getAttribute("ttm:role")
 
                 # 没有role代表是一个syl
                 if role == "":
@@ -135,25 +140,37 @@ class TTMLLine:
                     TTMLLine.have_ts = True
                     self.__ts_line = f'{child.childNodes[0].data}'
 
-        self.__begin = self.__orig_line[0].get_begin()
+        if len(self.__orig_line) != 1 or type(self.__orig_line[0]) != str:
+            self.__begin = self.__orig_line[0].get_begin()
+            self.__end = self.__orig_line[0].get_end()
+        else:
+            self.__begin: TTMLTime = TTMLTime(element.getAttribute("begin"))
+            self.__end: TTMLTime = TTMLTime(element.getAttribute("end"))
 
         if is_bg:
-            if TTMLLine.__before.search(self.__orig_line[0].text):
-                self.__orig_line[0].text = TTMLLine.__before.sub(self.__orig_line[0].text, '(')
+            if TTMLLine.__before.search(self.__orig_line[0] if type(self.__orig_line[0]) == str else self.__orig_line[0].text):
+                if type(self.__orig_line[0]) == str:
+                    self.__orig_line[0] = TTMLLine.__before.sub('(', self.__orig_line[0])
+                else:
+                    self.__orig_line[0].text = TTMLLine.__before.sub('(', self.__orig_line[0].text)
                 TTMLLine.have_pair += 1
-            if TTMLLine.__after.search(self.__orig_line[-1].text):
-                self.__orig_line[-1].text = TTMLLine.__after.sub(self.__orig_line[-1].text, ')')
+            if TTMLLine.__after.search(self.__orig_line[-1] if type(self.__orig_line[-1]) == str else self.__orig_line[-1].text):
+                if type(self.__orig_line[-1]) == str:
+                    self.__orig_line[-1] = TTMLLine.__after.sub(')', self.__orig_line[-1])
+                else:
+                    self.__orig_line[-1].text = TTMLLine.__after.sub(')', self.__orig_line[-1].text)
                 TTMLLine.have_pair += 1
 
     def __role(self) -> int:
         return ((int(TTMLLine.have_bg) + int(self.__is_bg)) * 3
                 + int(TTMLLine.have_duet) + int(self.__is_duet))
 
-    def __raw(self) -> tuple[str, str|None]:
-        return (f'[{self.__role()}]'+''.join([str(v) for v in self.__orig_line]),
+    def __raw(self) -> tuple[str, str | None]:
+        return (f'[{self.__role()}]' + (''.join([str(v) for v in self.__orig_line] if len(self.__orig_line) != 1 or type(
+            self.__orig_line[0]) != str else f'{self.__orig_line[0]}({int(self.__begin)},{self.__end - self.__begin})')),
                 f'[{self.__begin}]{self.__ts_line}' if self.__ts_line else None)
 
-    def to_str(self) -> tuple[tuple[str, str|None],tuple[str, str|None]|None]:
+    def to_str(self) -> tuple[tuple[str, str | None], tuple[str, str | None] | None]:
         return self.__raw(), (self.__bg_line.__raw() if self.__bg_line else None)
 
 def ttml_to_lys(input_path):
@@ -268,7 +285,7 @@ def step(argv_h):
         if input_path.strip().lower() == "about":
             # 输出关于信息并记录日志
             logger.info("输出\"关于\"信息")
-            logger.info("版本号 v5.1")
+            logger.info("版本号 v5.2")
             print("\n\033[94m"
             "TTML to Lyricify Syllable Tool\n\033[0m"
             "一个适用于 AMLL TTML 文件转 Lyricify Syllable 的小工具\n"

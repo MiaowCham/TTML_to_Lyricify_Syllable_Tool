@@ -1063,7 +1063,7 @@ def main():
 
 if __name__ == "__main__":
     # 设置版本信息
-    VERSION = "v1.2.0"
+    VERSION = "v1.2.1"
     print(f"TTML转Lyricify Syllable工具 {VERSION} - GUI版本")
     print("基于 TTML_to_Lyricify_Syllable_Tool 开发")
     print("项目地址：https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool")
