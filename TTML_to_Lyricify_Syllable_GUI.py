@@ -332,8 +332,8 @@ class TTMLToLyricifySyllableApp:
     def __init__(self, root):
         self.root = root
         self.root.title("TTML转Lyricify Syllable工具")
-        self.root.geometry("800x600")
-        self.root.configure(bg="#333333")
+        self.root.geometry("800x800")
+        self.root.configure(bg="#eeeeee")
         
         # 初始化后设置实际窗口大小为最小窗口大小
         self.root.update_idletasks()  # 确保窗口已经绘制
@@ -400,11 +400,11 @@ class TTMLToLyricifySyllableApp:
     def setup_styles(self):
         # 设置ttk样式
         style = ttk.Style()
-        style.configure("TButton", padding=6, relief="flat", background="#333333")
-        style.configure("TLabel", background="#333333", foreground="#FFFFFF")
-        style.configure("TCheckbutton", background="#333333", foreground="#FFFFFF")
-        style.configure("TPanedwindow", background="#333333")
-        style.configure("TFrame", background="#333333")
+        style.configure("TButton", padding=6, relief="flat", background="#DDDDDD")
+        style.configure("TLabel", background="#EEEEEE")
+        style.configure("TCheckbutton", background="#EEEEEE")
+        style.configure("TPanedwindow", background="#EEEEEE")
+        style.configure("TFrame", background="#EEEEEE")
         
     def create_widgets(self):
         # 创建主分割窗口
@@ -422,7 +422,7 @@ class TTMLToLyricifySyllableApp:
         # 左侧标签和文本框
         ttk.Label(left_frame, text="TTML输入").pack(anchor=tk.W, pady=(0, 5))
         
-        self.input_text = tk.Text(left_frame, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", insertbackground="white")
+        self.input_text = tk.Text(left_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", insertbackground="white")
         self.input_text.pack(fill=tk.BOTH, expand=True)
         self.input_text.insert(tk.END, "粘贴文本或拖动文件到此处")
         self.input_text.bind("<FocusIn>", self.clear_placeholder)
@@ -431,12 +431,12 @@ class TTMLToLyricifySyllableApp:
         ttk.Label(right_frame, text="Lyricify Syllable输出").pack(anchor=tk.W, pady=(0, 5))
         
         # 歌词输出框
-        self.output_text = tk.Text(right_frame, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED)
+        self.output_text = tk.Text(right_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", state=tk.DISABLED)
         self.output_text.pack(fill=tk.BOTH, expand=True)
         
         # 翻译标签和输出框
         ttk.Label(right_frame, text="翻译输出").pack(anchor=tk.W, pady=(10, 5))
-        self.trans_text = tk.Text(right_frame, wrap=tk.WORD, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED, height=8)
+        self.trans_text = tk.Text(right_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", state=tk.DISABLED, height=8)
         self.trans_text.pack(fill=tk.X, expand=False)
         
         # 底部按钮框架
@@ -781,7 +781,7 @@ class AMLLSearchWindow(tk.Toplevel):
         super().__init__(parent)
         self.title("从 AMLL DB 搜索")
         self.geometry("500x320")
-        self.configure(bg="#333333")
+        self.configure(bg="#EEEEEE")
         self.resizable(False, False)  # 设置为固定大小窗口
         # 不再需要最小尺寸设置，因为窗口大小已固定
         
@@ -861,7 +861,7 @@ class AMLLSearchWindow(tk.Toplevel):
         result_frame.pack_propagate(False)  # 防止子组件改变框架大小
         
         # 创建文本框
-        self.result_text = tk.Text(result_frame, wrap=tk.NONE, bg="#1E1E1E", fg="#FFFFFF", state=tk.DISABLED)
+        self.result_text = tk.Text(result_frame, wrap=tk.NONE, bg="#DDDDDD", fg="#111111", state=tk.DISABLED)
         self.result_text.pack(fill=tk.BOTH, expand=True)
         
         # 自动换行复选框
