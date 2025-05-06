@@ -97,6 +97,16 @@ def get_app_path():
         # 如果是开发环境
         return os.path.dirname(os.path.abspath(__file__))
 
+def get_resource_path(relative_path):
+    """获取资源文件的路径，处理打包后的情况"""
+    if getattr(sys, 'frozen', False):
+        # 如果是打包后的可执行文件
+        base_path = sys._MEIPASS
+    else:
+        # 如果是开发环境
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, relative_path)
+
 # 日志文件夹路径
 log_dir = os.path.join(get_app_path(), 'log')
 
@@ -346,11 +356,12 @@ class TTMLToLyricifySyllableApp:
         
         # 设置图标（如果有）
         try:
-            icon_path = os.path.join(get_app_path(), "icon.ico")
+            icon_path = get_resource_path("icon.ico")
             if os.path.exists(icon_path):
                 self.root.iconbitmap(icon_path)
-        except:
-            pass
+                logger.info(f"成功加载图标: {icon_path}")
+        except Exception as e:
+            logger.warning(f"加载图标失败: {str(e)}")
         
         # 日志启用状态和自动换行状态
         self.log_enabled = tk.BooleanVar(value=False)
@@ -783,7 +794,15 @@ class AMLLSearchWindow(tk.Toplevel):
         self.geometry("500x320")
         self.configure(bg="#EEEEEE")
         self.resizable(False, False)  # 设置为固定大小窗口
-        # 不再需要最小尺寸设置，因为窗口大小已固定
+        
+        # 设置图标（如果有）
+        try:
+            icon_path = get_resource_path("icon.ico")
+            if os.path.exists(icon_path):
+                self.iconbitmap(icon_path)
+                logger.info(f"AMLL搜索窗口成功加载图标: {icon_path}")
+        except Exception as e:
+            logger.warning(f"AMLL搜索窗口加载图标失败: {str(e)}")
         
         # 保存主应用引用
         self.main_app = main_app
