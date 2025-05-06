@@ -1,8 +1,13 @@
+<div align="center">
+<img src="icon.ico" width="15%" alt="icon" />
+
 # TTML to Lyricify Syllable Tool
 [![MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/blob/main/LICENSE)
 [![Static Badge](https://img.shields.io/badge/Languages-Python-blue.svg)](https://github.com/search?q=repo%3AMiaowCham%2FTTML_to_Lyricify_Syllable_Tool++language%3APython&type=code)
 [![Github Release](https://img.shields.io/github/v/release/MiaowCham/TTML_to_Lyricify_Syllable_Tool)](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/releases)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/MiaowCham/TTML_to_Lyricify_Syllable_Tool/.github/workflows/build.yml)](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/actions/workflows/build.yml)
+
+</div>
 
 >[!note]
 >包含用户图形界面的工具现已推出！
@@ -55,15 +60,18 @@ GUI版本不会主动输出 `.lys` 文件，仅会在勾选日志记录后输出
 ```
 [4]English (3694,384)version (4078,332)one(4410,389)
 ```
+>具体输出请以实际为准<br>
+若发现有bug请提交issue或直接联系@MiaowCham
 
 ## 注意事项
  仅针对 AMLL TTML Tool 输出的 TTML 文件进行适配，不保证其他来源的 TTML 文件转换可用性和准确性
 
 ## 鸣谢
-- 感谢 [**FanSh**](https://github.com/fred913/) 修改了部分不合理的内容并优化了log功能
-- 感谢 [**浩彬**](https://github.com/HKLHaoBin) 将此项目部署到 Github，使此项目得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
-- 感谢 [**ranhengzhang**](https://github.com/ranhengzhang) 重构了本项目
+- 感谢 [@fred913](https://github.com/fred913/) 修改了部分不合理的内容并优化了log功能
+- 感谢 [@HKLHaoBin](https://github.com/HKLHaoBin) 将此项目部署到 Github，使此项目得以在 GitHub Issue 中使用（[前往 TTML to Lys on Github](https://github.com/HKLHaoBin/ttml_to_lys)）
+- 感谢 [@ranhengzhang](https://github.com/ranhengzhang) 重构了本项目
 - 感谢 [Trae](https://www.trae.ai/)、[Github Copilot](https://github.com/features/copilot) 和 [Cursor](https://www.cursor.com/) 共同完成的 GUI 版本
+- 工具图标来自 [Fluent Emoji](https://github.com/microsoft/fluentui-emoji)
 
 ### 特别鸣谢
 
