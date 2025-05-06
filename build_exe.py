@@ -145,7 +145,8 @@ def build_exe():
             "--hidden-import=loguru",
             "--hidden-import=pyperclip",
             "--hidden-import=tkinterdnd2",
-            "--add-data=icon.ico;.",  # 添加图标文件作为资源
+            "--add-data=icon.ico;.",
+            "--icon=icon.ico",  # 添加图标文件作为资源
         ]
     else:
         # 使用Python模块
@@ -161,7 +162,8 @@ def build_exe():
             "--hidden-import=loguru",
             "--hidden-import=pyperclip",
             "--hidden-import=tkinterdnd2",
-            "--add-data=icon.ico;.",  # 添加图标文件作为资源
+            "--add-data=icon.ico;.",
+            "--icon=icon.ico",  # 添加图标文件作为资源
         ]
     
     # 添加图标（如果存在）
