@@ -164,6 +164,11 @@ def build_exe():
             "--add-data=icon.ico;.",  # 添加图标文件作为资源
         ]
     
+    # 添加图标（如果存在）
+    icon_path = os.path.join(current_dir, "icon.ico")
+    if os.path.exists(icon_path):
+        cmd.append(f"--icon={icon_path}")
+
     # 添加主程序文件
     cmd.append(main_script_path)
     
