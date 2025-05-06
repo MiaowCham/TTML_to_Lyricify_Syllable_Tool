@@ -332,7 +332,7 @@ class TTMLToLyricifySyllableApp:
     def __init__(self, root):
         self.root = root
         self.root.title("TTML转Lyricify Syllable工具")
-        self.root.geometry("800x800")
+        self.root.geometry("800x600")
         self.root.configure(bg="#eeeeee")
         
         # 初始化后设置实际窗口大小为最小窗口大小
@@ -422,7 +422,7 @@ class TTMLToLyricifySyllableApp:
         # 左侧标签和文本框
         ttk.Label(left_frame, text="TTML输入").pack(anchor=tk.W, pady=(0, 5))
         
-        self.input_text = tk.Text(left_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", insertbackground="white")
+        self.input_text = tk.Text(left_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", insertbackground="white", height=10)
         self.input_text.pack(fill=tk.BOTH, expand=True)
         self.input_text.insert(tk.END, "粘贴文本或拖动文件到此处")
         self.input_text.bind("<FocusIn>", self.clear_placeholder)
@@ -431,7 +431,7 @@ class TTMLToLyricifySyllableApp:
         ttk.Label(right_frame, text="Lyricify Syllable输出").pack(anchor=tk.W, pady=(0, 5))
         
         # 歌词输出框
-        self.output_text = tk.Text(right_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", state=tk.DISABLED)
+        self.output_text = tk.Text(right_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", state=tk.DISABLED, height=10)
         self.output_text.pack(fill=tk.BOTH, expand=True)
         
         # 翻译标签和输出框
@@ -1063,7 +1063,7 @@ def main():
 
 if __name__ == "__main__":
     # 设置版本信息
-    VERSION = "v1.2.1"
+    VERSION = "v1.2.2"
     print(f"TTML转Lyricify Syllable工具 {VERSION} - GUI版本")
     print("基于 TTML_to_Lyricify_Syllable_Tool 开发")
     print("项目地址：https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool")
