@@ -120,7 +120,7 @@ def setup_logger(enabled=False):
             logger.remove()
             # 添加新的文件处理器
             log_file = os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log")
-            logger.add(log_file, level='DEBUG', rotation="1 day", retention="7 days")
+            logger.add(log_file, level='TRACE', rotation="1 day", retention="7 days")
             logger.info("日志记录已启用")
             return True
         except Exception as e:
@@ -133,7 +133,9 @@ class TTMLTime:
     __pattern: Pattern = compile(r'\d+')
 
     def __init__(self, centi: str = ''):
-        if centi == '': return
+        if centi == '': 
+            logger.debug("初始化空的TTMLTime对象")
+            return
         # 使用 finditer 获取匹配的迭代器
         matches: Iterator[Match[str]] = TTMLTime.__pattern.finditer(centi)
         # 获取下一个匹配
@@ -161,10 +163,12 @@ class TTMLTime:
 class TTMLSyl:
     def __init__(self, element: Element):
         self.__element: Element = element
+        logger.trace(f"创建新的TTMLSyl对象，处理元素: {element.toxml()}")
 
         self.__begin: TTMLTime = TTMLTime(element.getAttribute("begin"))
         self.__end: TTMLTime = TTMLTime(element.getAttribute("end"))
         self.text: str = element.childNodes[0].nodeValue
+        logger.info(f"音节内容: {self.text}, 开始时间: {self.__begin}, 结束时间: {self.__end}")
 
     def __str__(self) -> str:
         return f'{self.text}({int(self.__begin)},{self.__end - self.__begin})'
@@ -186,16 +190,19 @@ class TTMLLine:
 
     def __init__(self, element: Element, is_bg: bool = False):
         self.__element: Element = element
+        logger.debug(f"创建新的TTMLLine对象，处理元素: {element.toxml()}")
         self.__orig_line: list[TTMLSyl|str] = []
         self.__ts_line: str|None = None
         self.__bg_line: TTMLLine|None = None
         self.__is_bg: bool = is_bg
 
         TTMLLine.have_bg |= is_bg
+        logger.trace(f"是否为和声行: {is_bg}, 当前和声状态: {TTMLLine.have_bg}")
 
         # 获取传入元素的 agent 属性
         agent: string = element.getAttribute("ttm:agent")
         self.__is_duet:bool = bool(agent and agent != 'v1')
+        logger.trace(f"对唱属性: agent={agent}, is_duet={self.__is_duet}")
 
         # 获取 <p> 元素的所有子节点，包括文本节点
         child_elements:list[Element] = element.childNodes  # iter() 会返回所有子元素和文本节点
@@ -205,25 +212,33 @@ class TTMLLine:
             if child.nodeType == 3 and child.nodeValue:  # 如果是文本节点（例如空格或换行）
                 if len(self.__orig_line) > 0 and len(child.nodeValue) < 2:
                     self.__orig_line[-1].text += child.nodeValue
+                    logger.debug(f"将文本节点追加到上一个元素: {self.__orig_line[-1].text}")
                 else:
                     self.__orig_line.append(child.nodeValue)
+                    logger.debug(f"添加新的文本节点: {child.nodeValue}")
             else:
                 # 获取 <span> 中的属性
                 role:str = child.getAttribute("ttm:role")
+                logger.trace(f"处理span元素，role属性: {role}")
 
                 # 没有role代表是一个syl
                 if role == "":
                     if child.childNodes[0].nodeValue:
+                        logger.debug(f"添加音节元素: {child.childNodes[0].nodeValue}")
                         self.__orig_line.append(TTMLSyl(child))
 
                 elif role == "x-bg":
                     # 和声行
+                    logger.info("检测到和声行，开始处理")
                     self.__bg_line = TTMLLine(child, True)
                     self.__bg_line.__is_duet = self.__is_duet
+                    logger.debug(f"和声行处理完成，继承对唱属性: {self.__is_duet}")
                 elif role == "x-translation":
                     # 翻译行
+                    logger.info("检测到翻译行，开始处理")
                     TTMLLine.have_ts = True
                     self.__ts_line = f'{child.childNodes[0].data}'
+                    logger.debug(f"翻译行内容: {self.__ts_line}")
 
         if len(self.__orig_line) != 1 or type(self.__orig_line[0]) != str:
             self.__begin = self.__orig_line[0].get_begin()
@@ -233,54 +248,93 @@ class TTMLLine:
             self.__end: TTMLTime = TTMLTime(element.getAttribute("end"))
 
         if is_bg:
+            logger.debug("处理和声行的括号")
             if TTMLLine.__before.search(self.__orig_line[0] if type(self.__orig_line[0]) == str else self.__orig_line[0].text):
+                logger.debug("检测到开头的多重括号，进行处理")
                 if type(self.__orig_line[0]) == str:
                     self.__orig_line[0] = TTMLLine.__before.sub('(', self.__orig_line[0])
                 else:
                     self.__orig_line[0].text = TTMLLine.__before.sub('(', self.__orig_line[0].text)
                 TTMLLine.have_pair += 1
+                logger.debug(f"处理后的开头文本: {self.__orig_line[0] if type(self.__orig_line[0]) == str else self.__orig_line[0].text}")
             if TTMLLine.__after.search(self.__orig_line[-1] if type(self.__orig_line[-1]) == str else self.__orig_line[-1].text):
+                logger.debug("检测到结尾的多重括号，进行处理")
                 if type(self.__orig_line[-1]) == str:
                     self.__orig_line[-1] = TTMLLine.__after.sub(')', self.__orig_line[-1])
                 else:
                     self.__orig_line[-1].text = TTMLLine.__after.sub(')', self.__orig_line[-1].text)
                 TTMLLine.have_pair += 1
+                logger.debug(f"处理后的结尾文本: {self.__orig_line[-1] if type(self.__orig_line[-1]) == str else self.__orig_line[-1].text}")
+            logger.debug(f"和声行括号处理完成，当前配对括号数: {TTMLLine.have_pair}")
 
     def __role(self) -> int:
         return ((int(TTMLLine.have_bg) + int(self.__is_bg)) * 3
                 + int(TTMLLine.have_duet) + int(self.__is_duet))
 
     def __raw(self) -> tuple[str, str|None]:
-        return (f'[{self.__role()}]' + (''.join([str(v) for v in self.__orig_line] if len(self.__orig_line) != 1 or type(
-            self.__orig_line[0]) != str else f'{self.__orig_line[0]}({int(self.__begin)},{self.__end - self.__begin})')),
-                f'[{self.__begin}]{self.__ts_line}' if self.__ts_line else None)
+        logger.debug("生成原始文本格式")
+        logger.debug(f"处理行类型: {'和声行' if self.__is_bg else '主要行'}")
+        
+        # 生成主要文本
+        role_text = f'[{self.__role()}]'
+        logger.debug(f"角色标记: {role_text}")
+        
+        # 根据行内容类型生成不同格式
+        if len(self.__orig_line) != 1 or type(self.__orig_line[0]) != str:
+            content_text = ''.join([str(v) for v in self.__orig_line])
+            logger.debug(f"多音节/复杂行内容: {content_text}")
+        else:
+            content_text = f'{self.__orig_line[0]}({int(self.__begin)},{self.__end - self.__begin})'
+            logger.debug(f"单行内容: {content_text}")
+        
+        main_text = role_text + content_text
+        logger.info(f"完整主要文本: {main_text}")
+        
+        # 处理翻译文本
+        if self.__ts_line:
+            trans_text = f'[{self.__begin}]{self.__ts_line}'
+            logger.info(f"生成翻译文本: {trans_text}")
+        else:
+            trans_text = None
+            logger.info("无翻译文本")
+        
+        return (main_text, trans_text)
 
     def to_str(self) -> tuple[tuple[str, str|None],tuple[str, str|None]|None]:
         return self.__raw(), (self.__bg_line.__raw() if self.__bg_line else None)
 
 def ttml_to_lyricify_syllable_text(ttml_content):
     """将TTML文本内容转换为Lyricify Syllable文本"""
+    logger.info("开始TTML到Lyricify Syllable的转换")
+    logger.debug(f"输入TTML内容长度: {len(ttml_content)}字符")
+    
+    # 重置状态变量
     TTMLLine.have_duet = False
     TTMLLine.have_bg = False
     TTMLLine.have_ts = False
     TTMLLine.have_pair = 0
+    logger.debug("重置所有状态变量")
 
     lyric_text = []
     trans_text = []
     
     try:
         # 预处理XML内容，移除可能导致解析错误的内容
+        logger.debug("开始预处理XML内容")
         ttml_content = ttml_content.replace('xmlns=""', '')
+        logger.debug("移除了空的xmlns属性")
         
         # 解析XML内容
-        logger.debug(f"尝试解析XML内容")
+        logger.debug("开始解析XML内容")
         dom: Document = xml.dom.minidom.parseString(ttml_content)  # 解析XML字符串
         tt: Document = dom.documentElement  # 获取根元素
+        logger.debug(f"XML根元素标签名: {tt.tagName}")
 
         # 获取tt中的body/head元素
-        logger.debug(f"尝试获取tt中的body/head元素")
+        logger.debug("尝试获取body和head元素")
         body: Element = tt.getElementsByTagName('body')[0]
         head: Element = tt.getElementsByTagName('head')[0]
+        logger.debug("成功获取body和head元素")
 
         if body and head:
             # 获取body/head中的<div>/<metadata>子元素
@@ -294,38 +348,43 @@ def ttml_to_lyricify_syllable_text(ttml_content):
             agent_elements: NodeList[Element] = metadata.getElementsByTagName('ttm:agent')
 
             # 检查是否有对唱
-            logger.debug(f"检查是否有对唱")
+            logger.debug(f"开始检查对唱信息，共发现{len(agent_elements)}个agent元素")
             for meta in agent_elements:
-                if meta.getAttribute('xml:id') != 'v1':
+                agent_id = meta.getAttribute('xml:id')
+                logger.debug(f"检查agent元素: id={agent_id}")
+                if agent_id != 'v1':
                     TTMLLine.have_duet = True
-                    logger.debug(f"发现对唱")
+                    logger.info(f"发现对唱声部: {agent_id}")
 
             lines: list[TTMLLine] = []
             # 遍历每个<p>元素
-            logger.debug(f"开始执行转换")
-            for p in p_elements:
+            total_p_elements = len(p_elements)
+            logger.info(f"开始处理歌词行，共{total_p_elements}行")
+            
+            for index, p in enumerate(p_elements):
+                logger.info(f"处理第{index + 1}/{total_p_elements}行")
                 lines.append(TTMLLine(p))
-                # 记录日志
-                logger.info(f"TTML第{p_elements.index(p)}行转换结果：{lines[-1].to_str()[0][0]}")
+                result = lines[-1].to_str()[0][0]
+                logger.info(f"第{index + 1}行转换结果: {result}")
+                logger.trace(f"原始XML内容: {p.toxml()}")
 
             # 生成输出文本
-            for main_line, bg_line in [line.to_str() for line in lines]:
+            for line in lines:
+                main_line, bg_line = line.to_str()
                 lyric_text.append(main_line[0])
                 if main_line[1]:
                     trans_text.append(main_line[1])
-                else:
+                elif TTMLLine.have_ts:
                     # 如果有翻译但当前行没有，添加空行保持行数一致
-                    if TTMLLine.have_ts:
-                        trans_text.append(f"[{main_line[0].split(']')[0].strip('[]')}]")
+                        trans_text.append(f"[{line._TTMLLine__begin}]")
 
                 if bg_line:
                     lyric_text.append(bg_line[0])
                     if bg_line[1]:
                         trans_text.append(bg_line[1])
-                    else:
+                    elif TTMLLine.have_ts:
                         # 如果有翻译但当前行没有，添加空行保持行数一致
-                        if TTMLLine.have_ts:
-                            trans_text.append(f"[{bg_line[0].split(']')[0].strip('[]')}]")
+                        trans_text.append(f"[{line._TTMLLine__bg_line._TTMLLine__begin}]")
 
         else:
             logger.exception("错误: 找不到<body>元素")
@@ -514,36 +573,53 @@ class TTMLToLyricifySyllableApp:
         # 处理文件拖放
         try:
             file_path = event.data
+            logger.debug(f"接收到拖放事件，原始数据: {event.data}")
+            
             # 移除可能的引号和前缀
             if isinstance(file_path, str):
                 # Windows路径处理
+                original_path = file_path
                 file_path = file_path.lstrip("&").strip(string.whitespace + "'\"")
                 # 处理tkinterdnd2返回的路径格式 {filepath}
                 if file_path.startswith('{') and file_path.endswith('}'): 
                     file_path = file_path[1:-1]
+                logger.debug(f"路径处理: {original_path} -> {file_path}")
             
-            logger.debug(f"拖放文件路径: {file_path}")
-            
-            if os.path.exists(file_path) and os.path.isfile(file_path):
-                try:
+            if os.path.exists(file_path):
+                if os.path.isfile(file_path):
+                    logger.info(f"开始读取文件: {file_path}")
                     try:
-                        with open(file_path, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                    except UnicodeDecodeError:
-                        # 尝试其他编码
-                        with open(file_path, 'r', encoding='gbk') as f:
-                            content = f.read()
+                        try:
+                            logger.debug("尝试使用UTF-8编码读取文件")
+                            with open(file_path, 'r', encoding='utf-8') as f:
+                                content = f.read()
+                            logger.debug("UTF-8编码读取成功")
+                        except UnicodeDecodeError:
+                            # 尝试其他编码
+                            logger.debug("UTF-8编码读取失败，尝试使用GBK编码")
+                            with open(file_path, 'r', encoding='gbk') as f:
+                                content = f.read()
+                            logger.debug("GBK编码读取成功")
                             
-                    self.update_input_text_threaded(content)
-                    self.set_status(f"文件读取成功: {file_path}")
-                except Exception as e:
-                    self.set_status(f"文件读取失败: {str(e)}")
-                    logger.exception(f"文件读取失败: {str(e)}")
+                        logger.debug(f"文件内容长度: {len(content)}字符")
+                        self.update_input_text_threaded(content)
+                        self.set_status(f"文件读取成功: {file_path}")
+                    except Exception as e:
+                        error_msg = f"文件读取失败: {str(e)}"
+                        self.set_status(error_msg)
+                        logger.exception(error_msg)
+                else:
+                    error_msg = f"路径不是文件: {file_path}"
+                    self.set_status("文件不存在或不是有效文件")
+                    logger.warning(error_msg)
             else:
+                error_msg = f"文件不存在: {file_path}"
                 self.set_status("文件不存在或不是有效文件")
+                logger.warning(error_msg)
         except Exception as e:
+            error_msg = f"文件拖放处理失败: {str(e)}"
             self.set_status(f"导入失败: {str(e)}")
-            logger.exception("文件拖放处理失败")
+            logger.exception(error_msg)
     
     def clear_placeholder(self, event):
         # 清除占位文本
@@ -552,17 +628,22 @@ class TTMLToLyricifySyllableApp:
     
     def paste_from_clipboard(self):
         # 从剪贴板粘贴内容
+        logger.debug("尝试从剪贴板获取内容")
         try:
             clipboard_content = pyperclip.paste()
             if clipboard_content:
+                logger.debug(f"剪贴板内容长度: {len(clipboard_content)}字符")
+                logger.debug(f"剪贴板内容前50个字符: {clipboard_content[:50]}...")
                 self.update_input_text_threaded(clipboard_content)
-                logger.info("成功从剪贴板获取内容")
+                logger.info("成功从剪贴板获取并更新内容")
             else:
-                self.set_status("剪切板为空")
-                logger.warning("剪贴板为空")
+                error_msg = "剪贴板为空"
+                self.set_status(error_msg)
+                logger.warning(error_msg)
         except Exception as e:
+            error_msg = f"剪贴板读取失败: {str(e)}"
             self.set_status("剪切板读取失败")
-            logger.exception(f"剪切板读取失败: {str(e)}")
+            logger.exception(error_msg)
             messagebox.showerror("剪贴板错误", f"无法读取剪贴板: {str(e)}")
     
     def import_file(self):
