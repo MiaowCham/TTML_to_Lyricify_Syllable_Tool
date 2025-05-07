@@ -21,6 +21,19 @@ except ImportError:
 # 导入必要的库
 # 首先尝试直接导入，如果打包后运行则应该已经包含这些库
 # 其次尝试使用pip安装（仅开发环境）
+# 导入darkdetect用于检测系统主题
+try:
+    import darkdetect
+except ImportError:
+    if pip_main:
+        print("正在安装darkdetect...")
+        pip_main(['install', 'darkdetect'])
+        import darkdetect
+    else:
+        # 打包环境中出错则显示友好错误
+        messagebox.showerror("错误", "缺少darkdetect库，程序无法正常运行。请重新下载完整版本或联系开发者。")
+        sys.exit(1)
+
 try:
     import requests
 except ImportError:
@@ -122,6 +135,9 @@ def setup_logger(enabled=False):
             log_file = os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log")
             logger.add(log_file, level='TRACE', rotation="1 day", retention="7 days")
             logger.info("日志记录已启用")
+            logger.info(f"TTML转Lyricify Syllable工具 {VERSION} - GUI版本")
+            logger.info("基于 TTML_to_Lyricify_Syllable_Tool 开发")
+            logger.info("项目地址：https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool")
             return True
         except Exception as e:
             print(f"设置日志失败: {str(e)}")
@@ -425,6 +441,7 @@ class TTMLToLyricifySyllableApp:
         # 日志启用状态和自动换行状态
         self.log_enabled = tk.BooleanVar(value=False)
         self.word_wrap_enabled = tk.BooleanVar(value=False)
+        self.previous_word_wrap_state = False  # 添加变量跟踪上一次的自动换行状态
         
         # 设置样式
         self.setup_styles()
@@ -439,7 +456,7 @@ class TTMLToLyricifySyllableApp:
         self.status_message = ""
         
         # 显示欢迎信息
-        self.set_status("欢迎使用TTML转Lyricify Syllable工具")
+        self.set_status(f"欢迎使用TTML转Lyricify Syllable工具，版本 {VERSION}")
         
         # 绑定复选框的变量跟踪
         self.log_enabled.trace_add("write", self.on_log_enabled_change)
@@ -460,21 +477,80 @@ class TTMLToLyricifySyllableApp:
             logger.remove()
             self.set_status("日志记录已禁用")
     
+    def update_theme_colors(self):
+        """更新所有UI元素的颜色以匹配当前主题"""
+        theme_colors = self.main_app.DARK_THEME if self.current_theme == "Dark" else self.main_app.LIGHT_THEME
+        self.configure(bg=theme_colors["bg"])
+        self.result_text.configure(bg=theme_colors["text_bg"], fg=theme_colors["text_fg"])
+        self.status_label.configure(background=theme_colors["bg"])
+
     def toggle_word_wrap(self):
         """切换文本框的自动换行状态"""
-        wrap_mode = tk.WORD if self.word_wrap_enabled.get() else tk.NONE
+        current_state = self.word_wrap_enabled.get()
+        wrap_mode = tk.WORD if current_state else tk.NONE
+        logger.info(f"切换自动换行状态: {'启用' if current_state else '禁用'}")
         self.input_text.configure(wrap=wrap_mode)
         self.output_text.configure(wrap=wrap_mode)
         self.trans_text.configure(wrap=wrap_mode)
         
+        # 只在状态发生变化时显示提示
+        if current_state != self.previous_word_wrap_state:
+            self.set_status(f"自动换行已{'启用' if current_state else '禁用'}")
+            self.previous_word_wrap_state = current_state
+        
+    # 定义主题颜色
+    LIGHT_THEME = {
+        "bg": "#EEEEEE",
+        "text_bg": "#DDDDDD",
+        "text_fg": "#111111",
+        "button_bg": "#DDDDDD"
+    }
+    
+    DARK_THEME = {
+        "bg": "#333333",
+        "text_bg": "#444444",
+        "text_fg": "#FFFFFF",
+        "button_bg": "#555555"
+    }
+    
     def setup_styles(self):
+        # 检测系统主题
+        self.current_theme = "Dark" if darkdetect.isDark() else "Light"
+        theme_colors = self.DARK_THEME if self.current_theme == "Dark" else self.LIGHT_THEME
+        
         # 设置ttk样式
         style = ttk.Style()
-        style.configure("TButton", padding=6, relief="flat", background="#DDDDDD")
-        style.configure("TLabel", background="#EEEEEE")
-        style.configure("TCheckbutton", background="#EEEEEE")
-        style.configure("TPanedwindow", background="#EEEEEE")
-        style.configure("TFrame", background="#EEEEEE")
+        style.configure("TButton", padding=6, relief="flat", background=theme_colors["button_bg"])
+        style.configure("TLabel", background=theme_colors["bg"], foreground=theme_colors["text_fg"])
+        style.configure("TCheckbutton", background=theme_colors["bg"], foreground=theme_colors["text_fg"])
+        style.configure("TPanedwindow", background=theme_colors["bg"])
+        style.configure("TFrame", background=theme_colors["bg"])
+        
+        # 更新窗口和文本框颜色
+        self.root.configure(bg=theme_colors["bg"])
+        
+        # 如果文本框已经创建，更新它们的颜色
+        if hasattr(self, 'input_text'):
+            self.input_text.configure(bg=theme_colors["text_bg"], fg=theme_colors["text_fg"])
+            self.output_text.configure(bg=theme_colors["text_bg"], fg=theme_colors["text_fg"])
+            self.trans_text.configure(bg=theme_colors["text_bg"], fg=theme_colors["text_fg"])
+        
+        # 启动主题监听线程
+        if not hasattr(self, '_theme_listener_started'):
+            self._theme_listener_started = True
+            t = threading.Thread(target=darkdetect.listener, args=(self._on_theme_change,))
+            t.daemon = True
+            t.start()
+            logger.info(f"主题监听已启动，当前主题：{self.current_theme}")
+    
+    def _on_theme_change(self, theme):
+        """当系统主题改变时调用"""
+        if theme != self.current_theme:
+            self.current_theme = theme
+            logger.info(f"检测到系统主题变化：{theme}")
+            # 在主线程中更新UI
+            self.root.after(0, self.setup_styles)
+            self.set_status(f"已切换至{theme}主题")
         
     def create_widgets(self):
         # 创建主分割窗口
@@ -492,7 +568,8 @@ class TTMLToLyricifySyllableApp:
         # 左侧标签和文本框
         ttk.Label(left_frame, text="TTML输入").pack(anchor=tk.W, pady=(0, 5))
         
-        self.input_text = tk.Text(left_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", insertbackground="white", height=10)
+        theme_colors = self.DARK_THEME if self.current_theme == "Dark" else self.LIGHT_THEME
+        self.input_text = tk.Text(left_frame, wrap=tk.WORD, bg=theme_colors["text_bg"], fg=theme_colors["text_fg"], insertbackground=theme_colors["text_fg"], height=10)
         self.input_text.pack(fill=tk.BOTH, expand=True)
         self.input_text.insert(tk.END, "粘贴文本或拖动文件到此处")
         self.input_text.bind("<FocusIn>", self.clear_placeholder)
@@ -501,12 +578,12 @@ class TTMLToLyricifySyllableApp:
         ttk.Label(right_frame, text="Lyricify Syllable输出").pack(anchor=tk.W, pady=(0, 5))
         
         # 歌词输出框
-        self.output_text = tk.Text(right_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", state=tk.DISABLED, height=10)
+        self.output_text = tk.Text(right_frame, wrap=tk.WORD, bg=theme_colors["text_bg"], fg=theme_colors["text_fg"], state=tk.DISABLED, height=10)
         self.output_text.pack(fill=tk.BOTH, expand=True)
         
         # 翻译标签和输出框
         ttk.Label(right_frame, text="翻译输出").pack(anchor=tk.W, pady=(10, 5))
-        self.trans_text = tk.Text(right_frame, wrap=tk.WORD, bg="#DDDDDD", fg="#111111", state=tk.DISABLED, height=8)
+        self.trans_text = tk.Text(right_frame, wrap=tk.WORD, bg=theme_colors["text_bg"], fg=theme_colors["text_fg"], state=tk.DISABLED, height=8)
         self.trans_text.pack(fill=tk.X, expand=False)
         
         # 底部按钮框架
@@ -797,7 +874,7 @@ class TTMLToLyricifySyllableApp:
     def set_status(self, message):
         # 更新状态消息
         self.status_label.config(text=f"提示: {message}")
-        logger.info(f"状态更新: {message}")
+        logger.trace(f"状态更新: {message}")
         
     def open_amll_search(self):
         # 打开AMLL DB搜索窗口
@@ -873,7 +950,10 @@ class AMLLSearchWindow(tk.Toplevel):
         super().__init__(parent)
         self.title("从 AMLL DB 搜索")
         self.geometry("500x320")
-        self.configure(bg="#EEEEEE")
+        # 获取主窗口的主题设置
+        self.current_theme = main_app.current_theme
+        theme_colors = main_app.DARK_THEME if self.current_theme == "Dark" else main_app.LIGHT_THEME
+        self.configure(bg=theme_colors["bg"])
         self.resizable(False, False)  # 设置为固定大小窗口
         
         # 设置图标（如果有）
@@ -961,7 +1041,9 @@ class AMLLSearchWindow(tk.Toplevel):
         result_frame.pack_propagate(False)  # 防止子组件改变框架大小
         
         # 创建文本框
-        self.result_text = tk.Text(result_frame, wrap=tk.NONE, bg="#DDDDDD", fg="#111111", state=tk.DISABLED)
+        theme_colors = self.main_app.DARK_THEME if self.current_theme == "Dark" else self.main_app.LIGHT_THEME
+        self.result_text = tk.Text(result_frame, wrap=tk.NONE, bg=theme_colors["text_bg"], fg=theme_colors["text_fg"], state=tk.DISABLED)
+        self.update_theme_colors()
         self.result_text.pack(fill=tk.BOTH, expand=True)
         
         # 自动换行复选框
@@ -993,6 +1075,13 @@ class AMLLSearchWindow(tk.Toplevel):
         self.import_btn = ttk.Button(right_buttons_frame, text="导入", command=self.import_result, state=tk.DISABLED)
         self.import_btn.pack(side=tk.RIGHT, padx=(0, 5))
     
+    def update_theme_colors(self):
+        """更新所有UI元素的颜色以匹配当前主题"""
+        theme_colors = self.main_app.DARK_THEME if self.current_theme == "Dark" else self.main_app.LIGHT_THEME
+        self.configure(bg=theme_colors["bg"])
+        self.result_text.configure(bg=theme_colors["text_bg"], fg=theme_colors["text_fg"])
+        self.status_label.configure(background=theme_colors["bg"])
+
     def toggle_word_wrap(self):
         """切换文本框的自动换行状态"""
         wrap_mode = tk.WORD if self.word_wrap_enabled.get() else tk.NONE
@@ -1163,10 +1252,10 @@ def main():
 
 if __name__ == "__main__":
     # 设置版本信息
-    VERSION = "v1.2.2"
-    print(f"TTML转Lyricify Syllable工具 {VERSION} - GUI版本")
+    VERSION = "v1.3.0"
+    print(f"\nTTML转Lyricify Syllable工具 {VERSION} - GUI版本")
     print("基于 TTML_to_Lyricify_Syllable_Tool 开发")
-    print("项目地址：https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool")
+    print("项目地址：https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool\n")
     
     # 启动应用
     main()
