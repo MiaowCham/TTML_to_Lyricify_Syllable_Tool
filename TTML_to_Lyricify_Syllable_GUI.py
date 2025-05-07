@@ -132,7 +132,7 @@ def setup_logger(enabled=False):
             # 移除所有现有的处理器
             logger.remove()
             # 添加新的文件处理器
-            log_file = os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d %H.%M.%S')}.log")
+            log_file = os.path.join(log_dir, f"{datetime.now().strftime('%Y-%m-%d_%H.%M.%S')}.log")
             logger.add(log_file, level='TRACE', rotation="1 day", retention="7 days")
             logger.info("日志记录已启用")
             logger.info(f"TTML转Lyricify Syllable工具 {VERSION} - GUI版本")
