@@ -80,7 +80,7 @@ def build_exe():
         pass  # 如果更新失败，忽略错误
     
     # 检查所有必需的包
-    required_packages = ["pyinstaller", "requests", "loguru", "pyperclip"]
+    required_packages = ["pyinstaller", "requests", "loguru", "pyperclip", "darkdetect"]
     for package in required_packages:
         if not is_package_installed(package):
             print(f"未检测到{package}，准备安装...")
@@ -145,6 +145,7 @@ def build_exe():
             "--hidden-import=loguru",
             "--hidden-import=pyperclip",
             "--hidden-import=tkinterdnd2",
+            "--hidden-import=darkdetect",
             "--add-data=icon.ico;.",
             "--icon=icon.ico",  # 添加图标文件作为资源
         ]
@@ -162,6 +163,7 @@ def build_exe():
             "--hidden-import=loguru",
             "--hidden-import=pyperclip",
             "--hidden-import=tkinterdnd2",
+            "--hidden-import=darkdetect",
             "--add-data=icon.ico;.",
             "--icon=icon.ico",  # 添加图标文件作为资源
         ]
