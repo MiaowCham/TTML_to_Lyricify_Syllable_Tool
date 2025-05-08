@@ -2,8 +2,6 @@ name: Build EXE
 
 on:
   push:
-    tags:
-      - 'v*'
     branches:
       - main
   pull_request:
@@ -50,9 +48,3 @@ jobs:
       with:
         name: TTML_to_LYS_Tool
         path: dist/TTML_to_LYS_Tool.exe
-        
-    - name: Upload to Release
-      if: github.event_name == 'release'
-      uses: softprops/action-gh-release@v1
-      with:
-        files: dist/TTML_to_LYS_Tool.exe 
