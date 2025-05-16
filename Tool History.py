@@ -285,11 +285,11 @@ def step(argv_h):
         if input_path.strip().lower() == "about":
             # 输出关于信息并记录日志
             logger.info("输出\"关于\"信息")
-            logger.info("版本号 v5.2")
+            logger.info(f"版本号 {VERSION}")
             print("\n\033[94m"
             "TTML to Lyricify Syllable Tool\n\033[0m"
             "一个适用于 AMLL TTML 文件转 Lyricify Syllable 的小工具\n"
-            "版本号：v5.1\n"
+            f"版本号：{VERSION}\n"
             "更新内容：修复背景人声ID错误的问题/修改启用日志的判断条件/新增\"关于\"文本\n\n"
             "项目地址：https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool\n"
             "Github Acitons 版本：https://github.com/HKLHaoBin/ttml_to_lys")
@@ -353,5 +353,6 @@ def step(argv_h):
 
 
 if __name__ == '__main__':
+    VERSION = "v5.2"
     argv = False
     step(argv)
