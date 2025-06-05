@@ -9,9 +9,10 @@
 
 </div>
 
->[!note]
->包含用户图形界面的工具现已推出！
->[跳转至Release下载](https://github.com/MiaowCham/TTML_to_Lyricify_Syllable_Tool/releases/)
+>[!note]  
+>本工具已实现所有预期功能，故即将归档仓库（**可能**会最后更新对 LQE 的支持）  
+>遇到问题请不要提交 issues 或 PR（~~反正也没人理~~  
+>若需要更新支持，请关注 @ranhengzhang 和 @apoint123 的多格式转换工具
 
 **一个适用于 TTML (AMLL标准) 文件转 Lyricify Syllable 的小工具**
 
@@ -22,8 +23,7 @@
   - loguru
   - pyperclip
 
-TTML (AMLL标准) 是 AMLL 默认使用的歌词文件；Lyricify Syllable 是 Lyricify 使用的歌词文件。他们都是为实现 Apple Music 样式歌词而制作的格式/规范。但很不幸的是：他们并不兼容。~并且使用 AMLL TTML Tool 输出的 Lyricify Syllable 格式及其不规范~。TTML to Lyricify Syllable Tool 就是为了解决这个问题而诞生的。
->***AMLL TTML Tool 现已去除（~注释掉~）相关导出功能（按键）*** <br>
+TTML (AMLL标准) 是 AMLL 默认使用的歌词文件；Lyricify Syllable 是 Lyricify 使用的歌词文件。他们都是为实现 Apple Music 样式歌词而制作的格式/规范。但很不幸的是：他们并不兼容。TTML to Lyricify Syllable Tool 就是为了解决这个问题而诞生的。
 >需要将 TTML 转换到别的格式？试试 [TTML TRANSLATER](https://github.com/ranhengzhang/ttml-translater)
 
 现在，一拖、一按，即可完成规范化转换！甚至可以提取翻译并单独输出。
